@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Property } from '../../types';
+import type { Property } from '../../types';
 import { SpotlightCard } from '../react-bits/SpotlightCard';
 import { useCompareStore } from '../../store/useCompareStore';
 import { Home, Bed, Bath, Maximize, Plus, Check } from 'lucide-react';

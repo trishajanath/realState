@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Property, Locality, LocalityMetrics, LocalityScores, RecommendationItem, Amenity } from '../types';
+import type { Property, Locality, LocalityMetrics, LocalityScores, RecommendationItem, Amenity } from '../types';
 import {
   mockLocalities,
   mockScores,

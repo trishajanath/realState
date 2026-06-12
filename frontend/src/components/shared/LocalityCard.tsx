@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Locality, LocalityScores, LocalityMetrics } from '../../types';
+import type { Locality, LocalityScores, LocalityMetrics } from '../../types';
 import { SpotlightCard } from '../react-bits/SpotlightCard';
 import { ScoreBadge } from './ScoreBadge';
 import { TrendingUp, BarChart } from 'lucide-react';
@@ -18,7 +18,6 @@ export const LocalityCard: React.FC<LocalityCardProps> = ({
 }) => {
   const investScore = scores?.investment_score || 75;
   const connectScore = scores?.connectivity_score || 70;
-  const safetyScore = scores?.healthcare_score ? (scores.healthcare_score + (scores.education_score || 70)) / 2 : 75;
 
   return (
     <SpotlightCard className="hover:shadow-md transition-shadow">

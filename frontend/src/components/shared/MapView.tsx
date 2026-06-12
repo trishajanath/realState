@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { mockLocalities, mockProperties } from '../../services/mockData';
-import { MapPin, Navigation, Compass, Layers, Shield, TrendingUp, Radio } from 'lucide-react';
+import { Navigation, Compass, Layers, Shield, TrendingUp, Radio } from 'lucide-react';
 
 interface MapViewProps {
   localityId?: string;
@@ -30,17 +30,19 @@ export const MapView: React.FC<MapViewProps> = ({
   const mapWidth = 800;
   const mapHeight = 500;
 
-  const latToY = (lat: number) => {
+  const latToY = (lat: number | undefined | null) => {
     const minLat = 10.99;
     const maxLat = 11.09;
-    const y = ((maxLat - lat) / (maxLat - minLat)) * mapHeight;
+    const l = lat || 11.02;
+    const y = ((maxLat - l) / (maxLat - minLat)) * mapHeight;
     return Math.max(20, Math.min(mapHeight - 20, y));
   };
 
-  const lonToX = (lon: number) => {
+  const lonToX = (lon: number | undefined | null) => {
     const minLon = 76.93;
     const maxLon = 77.05;
-    const x = ((lon - minLon) / (maxLon - minLon)) * mapWidth;
+    const l = lon || 77.00;
+    const x = ((l - minLon) / (maxLon - minLon)) * mapWidth;
     return Math.max(20, Math.min(mapWidth - 20, x));
   };
 

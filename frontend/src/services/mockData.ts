@@ -1,4 +1,4 @@
-import { Property, Locality, LocalityMetrics, LocalityScores, RecommendationItem, Amenity } from '../types';
+import type { Property, Locality, LocalityMetrics, LocalityScores, RecommendationItem, Amenity } from '../types';
 
 export const mockLocalities: Locality[] = [
   { id: '1a7a2e0a-3a5f-4a0b-8532-3ea17bc521f3', name: 'Saravanampatti', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0797, longitude: 77.0011 },

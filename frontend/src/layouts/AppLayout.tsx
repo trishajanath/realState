@@ -1,12 +1,11 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useCompareStore } from '../store/useCompareStore';
-import { LayoutDashboard, Compass, ArrowLeftRight, Activity, Map, Sparkles, X, ChevronRight } from 'lucide-react';
-import { ShinyText } from '../components/react-bits/ShinyText';
+import { LayoutDashboard, ArrowLeftRight, Map, Sparkles, ChevronRight } from 'lucide-react';
 
 export const AppLayout: React.FC = () => {
   const location = useLocation();
-  const { selectedIds, removeId, clear } = useCompareStore();
+  const { selectedIds, clear } = useCompareStore();
 
   const navItems = [
     { name: 'Analytics Board', path: '/analytics', icon: LayoutDashboard },
