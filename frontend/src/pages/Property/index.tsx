@@ -130,7 +130,13 @@ export const PropertyPage: React.FC = () => {
           whileHover={{ scale: 1.01 }}
           className="md:col-span-2 aspect-[16/10] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
         >
-          {store.mapsApiKey && property.latitude && property.longitude ? (
+          {property.images && property.images.length > 0 ? (
+            <img 
+              src={property.images[0]} 
+              alt={`${property.title} - Main Image`} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : store.mapsApiKey && property.latitude && property.longitude ? (
             <img 
               src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${property.latitude},${property.longitude}&fov=90&heading=235&pitch=10&key=${store.mapsApiKey}`}
               alt={`Live street view of ${property.title}`}
@@ -140,7 +146,9 @@ export const PropertyPage: React.FC = () => {
             <Building className="h-16 w-16 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
           )}
           <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
-          <span className="absolute bottom-4 left-4 bg-slate-900/80 text-white text-[10px] font-mono px-3 py-1.5 rounded-xl backdrop-blur">MAIN STREET VIEW Centroid</span>
+          <span className="absolute bottom-4 left-4 bg-slate-900/80 text-white text-[10px] font-mono px-3 py-1.5 rounded-xl backdrop-blur">
+            {property.images && property.images.length > 0 ? "PRIMARY ACQUISITION PHOTO" : "MAIN STREET VIEW Centroid"}
+          </span>
         </motion.div>
         <div className="grid grid-rows-2 gap-4">
           <motion.div 
@@ -150,8 +158,17 @@ export const PropertyPage: React.FC = () => {
             whileHover={{ scale: 1.02 }}
             className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
           >
-            <Building className="h-10 w-10 stroke-[1.2]" />
-            <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[9px] font-mono px-2 py-1 rounded-lg backdrop-blur">INTERIOR PROJECTION</span>
+            {property.images && property.images.length > 1 ? (
+              <img 
+                src={property.images[1]} 
+                alt={`${property.title} - Interior`} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <Building className="h-10 w-10 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
+            )}
+            <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
+            <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[9px] font-mono px-2 py-1 rounded-lg backdrop-blur">INTERIOR VIEW</span>
           </motion.div>
           <motion.div 
             initial={{ opacity: 0, x: 10 }}
@@ -160,8 +177,17 @@ export const PropertyPage: React.FC = () => {
             whileHover={{ scale: 1.02 }}
             className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
           >
-            <Building className="h-10 w-10 stroke-[1.2]" />
-            <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[9px] font-mono px-2 py-1 rounded-lg backdrop-blur">COMMUNAL HUD</span>
+            {property.images && property.images.length > 2 ? (
+              <img 
+                src={property.images[2]} 
+                alt={`${property.title} - Communal`} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <Building className="h-10 w-10 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
+            )}
+            <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
+            <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[9px] font-mono px-2 py-1 rounded-lg backdrop-blur">COMMUNAL HUD VIEW</span>
           </motion.div>
         </div>
       </div>

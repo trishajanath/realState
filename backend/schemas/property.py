@@ -19,6 +19,7 @@ class PropertyBase(BaseModel):
     state: str = Field("Tamil Nadu", description="State name")
     source: Optional[str] = Field(None, description="Data source site name")
     listing_url: Optional[str] = Field(None, description="Direct URL path to the listing")
+    images: Optional[List[str]] = Field(None, description="Property listing images")
 
 
 class PropertyCreate(PropertyBase):

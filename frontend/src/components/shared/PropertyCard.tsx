@@ -38,14 +38,22 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
 
   return (
     <SpotlightCard className="flex flex-col h-full hover:shadow-md transition-shadow">
-      <Link to={`/property/${property.id}`} className="flex flex-col h-full">
+      <Link to={`/property/${property.id}`} className="flex flex-col h-full group">
         {/* Mock image container */}
         <div className="relative aspect-[16/10] w-full rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-300">
-          <Home className="h-10 w-10 stroke-[1.5]" />
-          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-900 border border-slate-200/50 shadow-sm">
+          {property.images && property.images.length > 0 ? (
+            <img 
+              src={property.images[0]} 
+              alt={property.title} 
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <Home className="h-10 w-10 stroke-[1.5]" />
+          )}
+          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-900 border border-slate-200/50 shadow-sm z-10">
             {property.property_type}
           </div>
-          <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-mono tracking-wider uppercase font-bold">
+          <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-mono tracking-wider uppercase font-bold z-10">
             Grade {ratingGrade}
           </div>
         </div>

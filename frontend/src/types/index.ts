@@ -16,6 +16,7 @@ export interface Property {
   listing_url?: string | null;
   ai_description?: string | null;
   ai_investment_rating?: string | null;
+  images?: string[];
 }
 
 export interface Locality {

@@ -1082,19 +1082,27 @@ export const MapPage: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Google Street View Static API Preview */}
-                    {store.mapsApiKey && prop.latitude && prop.longitude && (
+                    {/* Google Street View or Property Image Preview */}
+                    {(prop.images && prop.images.length > 0) || (store.mapsApiKey && prop.latitude && prop.longitude) ? (
                       <div className="w-full h-28 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative group">
-                        <img 
-                          src={`https://maps.googleapis.com/maps/api/streetview?size=400x150&location=${prop.latitude},${prop.longitude}&fov=90&heading=235&pitch=10&key=${store.mapsApiKey}`}
-                          alt={`Street view of ${prop.title}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
+                        {prop.images && prop.images.length > 0 ? (
+                          <img 
+                            src={prop.images[0]} 
+                            alt={`Photo of ${prop.title}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <img 
+                            src={`https://maps.googleapis.com/maps/api/streetview?size=400x150&location=${prop.latitude},${prop.longitude}&fov=90&heading=235&pitch=10&key=${store.mapsApiKey}`}
+                            alt={`Street view of ${prop.title}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        )}
                         <span className="absolute bottom-2 left-2 bg-slate-900/80 text-white text-[8px] font-mono px-2 py-0.5 rounded backdrop-blur">
-                          STREET VIEW LIVE FEED
+                          {prop.images && prop.images.length > 0 ? "PROPERTY ACQUISITION PHOTO" : "STREET VIEW LIVE FEED"}
                         </span>
                       </div>
-                    )}
+                    ) : null}
 
                     {/* AI explanation and metrics summary */}
                     <div className="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-100 p-2.5 rounded-xl font-medium">

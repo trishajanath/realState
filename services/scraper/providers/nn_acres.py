@@ -322,6 +322,11 @@ class NinetyNineAcresParser(BaseParser):
             canonical = soup.find("link", attrs={"rel": "canonical"}) or soup.find("meta", attrs={"property": "og:url"})
             if canonical:
                 extracted["listing_url"] = canonical.get("href") or canonical.get("content")
+
+            # Parse og:image tags
+            og_image = soup.find("meta", attrs={"property": "og:image"})
+            if og_image and og_image.get("content"):
+                extracted["images"] = [og_image["content"]]
         except Exception as e:
             logger.debug("Failed parsing meta tags", error=str(e))
 
@@ -407,6 +412,15 @@ class NinetyNineAcresNormalizer(BaseNormalizer):
             # 7. Listing Type
             listing_type = "Rent" if "rent" in title_lower or "rent" in description.lower() else "Sale"
 
+            # 8. Images
+            images = parsed_data.get("images") or []
+            if not images:
+                images = [
+                    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&auto=format&fit=crop",
+                    "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop",
+                    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&auto=format&fit=crop"
+                ]
+
             return {
                 "title": title,
                 "property_type": prop_type,
@@ -421,7 +435,8 @@ class NinetyNineAcresNormalizer(BaseNormalizer):
                 "city": parsed_data.get("city") or "Coimbatore",
                 "state": "Tamil Nadu",
                 "source": "99acres",
-                "listing_url": parsed_data.get("listing_url", "")
+                "listing_url": parsed_data.get("listing_url", ""),
+                "images": images
             }
         except Exception as e:
             raise TypeError(f"99acres Normalization failed: {str(e)}")
