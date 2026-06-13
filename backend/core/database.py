@@ -37,7 +37,8 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 # --- MongoDB Setup ---
-logger.info("Initializing MongoDB Async client", url=settings.MONGODB_URL)
+mongo_log_url = settings.MONGODB_URL.split("@")[-1] if "@" in settings.MONGODB_URL else settings.MONGODB_URL
+logger.info("Initializing MongoDB Async client", url=mongo_log_url)
 mongo_client = AsyncIOMotorClient(
     settings.MONGODB_URL,
     uuidRepresentation="standard",

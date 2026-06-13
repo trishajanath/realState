@@ -61,7 +61,7 @@ export const mockMetrics: Record<string, LocalityMetrics> = {
 
 export const mockProperties: Property[] = [
   {
-    id: 'p101', title: 'Casagrand Amethyst 3BHK Apartment', property_type: 'Apartment', listing_type: 'Sale',
+    id: '10100000-0000-0000-0000-000000000101', title: 'Casagrand Amethyst 3BHK Apartment', property_type: 'Apartment', listing_type: 'Sale',
     price: 8500000, area_sqft: 1650, bedrooms: 3, bathrooms: 3, latitude: 11.0822, longitude: 77.0034,
     locality_id: '1a7a2e0a-3a5f-4a0b-8532-3ea17bc521f3', city: 'Coimbatore', state: 'Tamil Nadu', source: 'MagicBricks',
     listing_url: 'https://magicbricks.com/cbe/casagrand-amethyst',
@@ -69,7 +69,7 @@ export const mockProperties: Property[] = [
     ai_investment_rating: 'Grade: A - High Potential | Analysis: Priced at 5,150 INR/sqft which is highly competitive considering current IT expansions and Peelamedu-Saravanampatti connection corridor updates.'
   },
   {
-    id: 'p102', title: 'Sreevatsa Li\'l Earth Villa in Saravanampatti', property_type: 'Villa', listing_type: 'Sale',
+    id: '10100000-0000-0000-0000-000000000102', title: 'Sreevatsa Li\'l Earth Villa in Saravanampatti', property_type: 'Villa', listing_type: 'Sale',
     price: 14200000, area_sqft: 2200, bedrooms: 3, bathrooms: 4, latitude: 11.0745, longitude: 77.0121,
     locality_id: '1a7a2e0a-3a5f-4a0b-8532-3ea17bc521f3', city: 'Coimbatore', state: 'Tamil Nadu', source: '99acres',
     listing_url: 'https://99acres.com/cbe/sreevatsa-lil-earth',
@@ -77,7 +77,7 @@ export const mockProperties: Property[] = [
     ai_investment_rating: 'Grade: B+ - Fair Value | Analysis: Price represents fair market valuation for independent luxury units in Coimbatore IT peripheral sectors.'
   },
   {
-    id: 'p201', title: 'Salarpuria Sattva Navaratna Residency Peelamedu', property_type: 'Apartment', listing_type: 'Sale',
+    id: '20100000-0000-0000-0000-000000000201', title: 'Salarpuria Sattva Navaratna Residency Peelamedu', property_type: 'Apartment', listing_type: 'Sale',
     price: 11500000, area_sqft: 1800, bedrooms: 3, bathrooms: 3, latitude: 11.0298, longitude: 77.0062,
     locality_id: '2b7a2e0b-3b5f-4b0b-8533-3ea17bc521f4', city: 'Coimbatore', state: 'Tamil Nadu', source: '99acres',
     listing_url: 'https://99acres.com/cbe/sattva-navaratna',
@@ -85,12 +85,36 @@ export const mockProperties: Property[] = [
     ai_investment_rating: 'Grade: A- - Solid Asset | Analysis: Premium Avinashi Road visibility yields strong price appreciation (avg 8% annually). High demand for corporate rents.'
   },
   {
-    id: 'p601', title: 'Luxury 4BHK Villa in RS Puram', property_type: 'Villa', listing_type: 'Sale',
+    id: '60100000-0000-0000-0000-000000000601', title: 'Luxury 4BHK Villa in RS Puram', property_type: 'Villa', listing_type: 'Sale',
     price: 32000000, area_sqft: 3800, bedrooms: 4, bathrooms: 5, latitude: 11.0123, longitude: 76.9412,
     locality_id: '6f7a2e0f-3f5f-4f0b-8537-3ea17bc521f8', city: 'Coimbatore', state: 'Tamil Nadu', source: 'Direct Broker',
     listing_url: 'https://realestateplatform.com/listings/rs-puram-luxury-villa',
     ai_description: 'This ultra-premium villa is located in the most posh avenue of RS Puram. Featuring Italian marble flooring, a private terrace patio, smart automated security systems, and walking access to DB Road shopping high-streets.',
     ai_investment_rating: 'Grade: B - Wealth Preservation | Analysis: High absolute pricing of 8,420 INR/sqft limits explosive capital returns, but RS Puram remains the most stable micro-market for wealthy preservation assets.'
+  },
+  {
+    id: '20200000-0000-0000-0000-000000000202', title: 'Premium 4BHK Independent House in Peelamedu', property_type: 'Independent House', listing_type: 'Sale',
+    price: 18500000, area_sqft: 2800, bedrooms: 4, bathrooms: 4, latitude: 11.0254, longitude: 77.0102,
+    locality_id: '2b7a2e0b-3b5f-4b0b-8533-3ea17bc521f4', city: 'Coimbatore', state: 'Tamil Nadu', source: 'MagicBricks',
+    listing_url: 'https://magicbricks.com/cbe/peelamedu-independent-house',
+    ai_description: 'An elegant independent house located close to Fun Republic Mall in Peelamedu, Coimbatore. Featuring a private gated compound, modular kitchen, and strong rental demand from medical professionals.',
+    ai_investment_rating: 'Grade: A - Solid Value | Analysis: High demand for independent homes near Peelamedu commercial corridors ensures quick appreciation.'
+  },
+  {
+    id: '20300000-0000-0000-0000-000000000203', title: 'Spacious 2BHK House for Rent in Peelamedu', property_type: 'Independent House', listing_type: 'Rent',
+    price: 22000, area_sqft: 1200, bedrooms: 2, bathrooms: 2, latitude: 11.0321, longitude: 77.0154,
+    locality_id: '2b7a2e0b-3b5f-4b0b-8533-3ea17bc521f4', city: 'Coimbatore', state: 'Tamil Nadu', source: '99acres',
+    listing_url: 'https://99acres.com/cbe/peelamedu-house-rent',
+    ai_description: 'Comfortable 2 BHK independent home for rent in Peelamedu. Located in a quiet residential layout, close to PSG Tech and GRD College. Ideal for families and students.',
+    ai_investment_rating: 'Grade: B+ - Fair Value | Analysis: Steady rental income with low vacancy rates due to educational institutions nearby.'
+  },
+  {
+    id: '20400000-0000-0000-0000-000000000204', title: '2BHK Apartment for Rent in Peelamedu', property_type: 'Apartment', listing_type: 'Rent',
+    price: 18000, area_sqft: 1050, bedrooms: 2, bathrooms: 2, latitude: 11.0285, longitude: 77.0095,
+    locality_id: '2b7a2e0b-3b5f-4b0b-8533-3ea17bc521f4', city: 'Coimbatore', state: 'Tamil Nadu', source: 'MagicBricks',
+    listing_url: 'https://magicbricks.com/cbe/peelamedu-apartment-rent',
+    ai_description: 'Modern 2 BHK apartment unit in a premium gated community in Peelamedu. Equipped with modular kitchen, private balcony, security, and power backup. Superb connectivity to Avinashi Road.',
+    ai_investment_rating: 'Grade: B - High Yield | Analysis: Yields 4.2% rental return annually due to prime IT and educational belt location.'
   }
 ];
 

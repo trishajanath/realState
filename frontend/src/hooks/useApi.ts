@@ -75,11 +75,11 @@ export function useProperties() {
     queryKey: ['properties'],
     queryFn: async () => {
       try {
-        const res = await fetch(getUrl('properties', '/properties'));
+        const res = await fetch(getUrl('properties', '/api/v1/properties'));
         if (!res.ok) throw new Error();
         const data = await res.json();
-        // Backend returns property items inside "items" field usually if paginated
-        return data.items || data;
+        // Backend returns property items inside "results" or "items" field if paginated
+        return data.results || data.items || data;
       } catch (e) {
         console.warn('Backend Properties API offline. Using mock properties.');
         return mockProperties;
@@ -93,7 +93,7 @@ export function usePropertyDetails(propertyId: string) {
     queryKey: ['property', propertyId],
     queryFn: async () => {
       try {
-        const res = await fetch(getUrl('properties', `/properties/${propertyId}`));
+        const res = await fetch(getUrl('properties', `/api/v1/properties/${propertyId}`));
         if (!res.ok) throw new Error();
         return await res.json();
       } catch (e) {

@@ -129,7 +129,7 @@ export const AnalyticsPage: React.FC = () => {
                 <CardTitle className="text-xs text-slate-500 uppercase font-mono">Comparative price appreciation path (INR / sqft)</CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <LineChart data={priceTrendsData}>
                     <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
                     <XAxis dataKey="year" stroke="#475569" fontSize={11} tickLine={false} />
@@ -153,7 +153,7 @@ export const AnalyticsPage: React.FC = () => {
                 <CardTitle className="text-xs text-slate-500 uppercase font-mono">Annualized rental yield percentages across micro-sectors</CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <BarChart data={yieldComparisonData}>
                     <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
                     <XAxis dataKey="name" stroke="#475569" fontSize={11} tickLine={false} />

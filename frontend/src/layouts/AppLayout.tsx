@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useCompareStore } from '../store/useCompareStore';
-import { LayoutDashboard, ArrowLeftRight, Map, Sparkles, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Map, Sparkles, ChevronRight, LogOut } from 'lucide-react';
 
 export const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -55,6 +55,18 @@ export const AppLayout: React.FC = () => {
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Coimbatore Market Stable</span>
           </div>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('user_name');
+              localStorage.removeItem('user_email');
+              window.location.href = '/login';
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold cursor-pointer transition-all"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 

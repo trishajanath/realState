@@ -298,7 +298,7 @@ export const LocalityPage: React.FC = () => {
             </CardHeader>
             <CardContent className="h-64">
               {chartTab === '1y' && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <AreaChart data={oneYearData}>
                     <defs>
                       <linearGradient id="chartColor" x1="0" y1="0" x2="0" y2="1">
@@ -314,7 +314,7 @@ export const LocalityPage: React.FC = () => {
                 </ResponsiveContainer>
               )}
               {chartTab === '3y' && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <AreaChart data={threeYearData}>
                     <defs>
                       <linearGradient id="chartColor3" x1="0" y1="0" x2="0" y2="1">
@@ -330,7 +330,7 @@ export const LocalityPage: React.FC = () => {
                 </ResponsiveContainer>
               )}
               {chartTab === 'dist' && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <BarChart data={priceDistribution}>
                     <XAxis dataKey="range" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
@@ -340,7 +340,7 @@ export const LocalityPage: React.FC = () => {
                 </ResponsiveContainer>
               )}
               {chartTab === 'type' && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <PieChart>
                     <Pie
                       data={typeDistribution}

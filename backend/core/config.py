@@ -23,7 +23,14 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str = "realstate_mongo"
 
     # AI API Configurations
-    GEMINI_API_KEY: str = "AIzaSyDC_Obdu6DGqdB_x3YqOrz8KXi8Lmd6Zzc"
+    GEMINI_API_KEY: str = "AIzaSyAiBqZYGV4IF1SrRiB3MWohwA55oFhfEtg"
+    GOOGLE_GEOCODING_API_KEY: Optional[str] = None
+
+    # Google OAuth Configurations
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_CALLBACK_URL: Optional[str] = None
+    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
 
     @property
     def postgres_async_url(self) -> str:

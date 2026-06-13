@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePropertyDetails, useLocalities } from '../../hooks/useApi';
 import { useCompareStore } from '../../store/useCompareStore';
+import { useMapFilterStore } from '../../store/useMapFilterStore';
 import { MapView } from '../../components/shared/MapView';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/Dialog';
@@ -18,6 +19,7 @@ export const PropertyPage: React.FC = () => {
 
   const { data: property } = usePropertyDetails(propertyId);
   const { data: localities } = useLocalities();
+  const store = useMapFilterStore();
 
   const { addId, removeId, isCompared } = useCompareStore();
   const [isSaved, setIsSaved] = useState(false);
@@ -128,9 +130,17 @@ export const PropertyPage: React.FC = () => {
           whileHover={{ scale: 1.01 }}
           className="md:col-span-2 aspect-[16/10] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
         >
-          <Building className="h-16 w-16 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
+          {store.mapsApiKey && property.latitude && property.longitude ? (
+            <img 
+              src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${property.latitude},${property.longitude}&fov=90&heading=235&pitch=10&key=${store.mapsApiKey}`}
+              alt={`Live street view of ${property.title}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <Building className="h-16 w-16 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
+          )}
           <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
-          <span className="absolute bottom-4 left-4 bg-slate-900/80 text-white text-[10px] font-mono px-3 py-1.5 rounded-xl backdrop-blur">MAIN LIVING GRID Centroid</span>
+          <span className="absolute bottom-4 left-4 bg-slate-900/80 text-white text-[10px] font-mono px-3 py-1.5 rounded-xl backdrop-blur">MAIN STREET VIEW Centroid</span>
         </motion.div>
         <div className="grid grid-rows-2 gap-4">
           <motion.div 
@@ -214,7 +224,7 @@ export const PropertyPage: React.FC = () => {
               <CardTitle className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Unit Acquisition History</CardTitle>
             </CardHeader>
             <CardContent className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <AreaChart data={trendData}>
                   <defs>
                     <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
