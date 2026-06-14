@@ -9,6 +9,7 @@ from storage import MongoScraperStorage
 from providers.sample import SampleProvider, SampleParser, SampleNormalizer
 from providers.nn_acres import NinetyNineAcresProvider, NinetyNineAcresParser, NinetyNineAcresNormalizer
 from providers.magic_bricks import MagicBricksProvider, MagicBricksParser, MagicBricksNormalizer
+from providers.housing import HousingProvider, HousingParser, HousingNormalizer
 
 # Configure clean logging
 structlog.configure(
@@ -153,6 +154,32 @@ async def run_pipeline():
 
     logger.info("TEST CASE 3.4: Parse Layout Failure (Corrupt HTML)")
     await mb_pipeline.run("https://www.magicbricks.com/mock-corrupt")
+
+    # ==========================================
+    # 4. RUN HOUSING.COM PIPELINE
+    # ==========================================
+    logger.info("\n=== RUNNING HOUSING.COM PIPELINE ===")
+    housing_pipeline = ScraperPipeline(
+        HousingProvider(),
+        HousingParser(),
+        HousingNormalizer(),
+        storage
+    )
+
+    logger.info("TEST CASE 4.1: Success (Peelamedu Rent Flat)")
+    await housing_pipeline.run("https://www.housing.com/mock-listing-peelamedu-apartment-rent")
+
+    logger.info("TEST CASE 4.2: Success (Saravanampatti Sale Plot)")
+    await housing_pipeline.run("https://www.housing.com/mock-listing-saravanampatti-plot-buy")
+
+    logger.info("TEST CASE 4.3: Success (RS Puram Sale Villa)")
+    await housing_pipeline.run("https://www.housing.com/mock-listing-rs-puram-villa-buy")
+
+    logger.info("TEST CASE 4.4: Fetch Failure (Network Error)")
+    await housing_pipeline.run("https://www.housing.com/fail-network")
+
+    logger.info("TEST CASE 4.5: Parse Layout Failure (Corrupt HTML)")
+    await housing_pipeline.run("https://www.housing.com/mock-corrupt")
 
 
 if __name__ == "__main__":

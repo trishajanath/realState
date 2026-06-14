@@ -214,21 +214,6 @@ Records every non-trivial change implemented by AI agents. Governed by [.skills/
 
 ---
 
-## [Change #16] — 2026-06-15: Rebrand to XVERTA and Light Theme Redesign
-
-| Field | Detail |
-|---|---|
-| **Task** | Rename product from "CoimbatoreREI" to "XVERTA"; invert color scheme to white background / black text; redesign Home, Login, and Signup pages |
-| **Why required** | Product owner requested a brand rename to XVERTA and a full color inversion (light theme replacing the dark monochrome theme) for a cleaner, more premium look |
-| **Files modified** | `frontend/src/index.css`, `frontend/src/layouts/AppLayout.tsx`, `frontend/src/pages/Home/index.tsx`, `frontend/src/pages/Login/index.tsx`, `frontend/src/pages/Signup/index.tsx` |
-| **Blast radius** | Low — pure visual/branding change; no auth, API, database, or routing logic touched |
-| **Rollback** | `git checkout HEAD -- frontend/src/index.css frontend/src/layouts/AppLayout.tsx frontend/src/pages/Home/index.tsx frontend/src/pages/Login/index.tsx frontend/src/pages/Signup/index.tsx` |
-| **Verification** | TypeScript compilation passes; XVERTA branding confirmed in sidebar, header, auth pages, and footer; light theme (white bg, black text) confirmed on all redesigned pages; hover states on QuickActionCard and LocalityRow verified |
-| **Side effects** | Inner dashboard pages (Compare, Analytics, Property, Map, Locality) still carry dark inline styles — mixed light/dark theme until those pages are migrated. ForgotPassword and VerifyEmail pages (no explicit overrides) now correctly inherit light theme from global CSS. |
-| **Deployment impact** | None — frontend-only visual change; no server, API surface, or environment variable changes |
-
----
-
 ## [Change #15] — 2026-06-14: Fix useMapFilterStore.ts TypeScript Interface Gap
 
 | Field | Detail |
@@ -244,60 +229,15 @@ Records every non-trivial change implemented by AI agents. Governed by [.skills/
 
 ---
 
-## [Change #14] — 2026-06-15: Fix MongoDB Text Index Conflict on Backend Startup
+## [Change #16] — 2026-06-14: Multi-Provider Scraper Expansion & Frontend Dynamic Map Binding
 
 | Field | Detail |
 |---|---|
-| **Task** | Drop conflicting text index before recreating in `backend/main.py` lifespan startup |
-| **Why required** | `IndexOptionsConflict` (error code 85) — old index had `description` weight, new code uses `ai_description`; MongoDB rejects redefining index options |
-| **Files modified** | `backend/main.py` |
-| **Blast radius** | Very low — text index on `properties` collection only; brief unavailability during cold-start drop/recreate |
-| **Rollback** | `git checkout HEAD -- backend/main.py` |
-| **Verification** | Backend starts without IndexOptionsConflict errors; text search returns results |
-| **Side effects** | None |
-| **Deployment impact** | One-time at startup — index is recreated correctly on each fresh deploy |
-
----
-
-## [Change #15] — 2026-06-15: Fix Runtime Crash from useProperties() Shape Mismatch
-
-| Field | Detail |
-|---|---|
-| **Task** | Fix `TypeError: allProperties.filter is not a function` on MapPage and ComparePage |
-| **Why required** | `useProperties()` returns `PropertyListResult { total, skip, limit, results }`, not `Property[]`; direct `.filter()` on the object crashed both pages |
-| **Files modified** | `frontend/src/pages/Map/index.tsx`, `frontend/src/pages/Compare/index.tsx` |
-| **Blast radius** | Low — bug fix; both pages now safely read `properties?.results ?? []` |
-| **Rollback** | `git checkout HEAD -- frontend/src/pages/Map/index.tsx frontend/src/pages/Compare/index.tsx` |
-| **Verification** | MapPage loads without console errors; ComparePage compare flow works |
-| **Side effects** | MapPage no longer falls back to mockLocalities/mockProperties — shows real API data or empty list |
-| **Deployment impact** | None |
-
----
-
-## [Change #16] — 2026-06-15: Full Light Theme Conversion for Inner Pages and MapView
-
-| Field | Detail |
-|---|---|
-| **Task** | Convert all inner pages and MapView from dark theme to light theme; replace mock data in MapView with real API props |
-| **Why required** | AppLayout shell was white but all inner pages used dark backgrounds/white text — invisible on white shell; MapView used `darkMapStyle` and hardcoded `mockLocalities`/`mockProperties` for map rendering |
-| **Files modified** | `frontend/src/pages/Property/index.tsx`, `frontend/src/pages/Compare/index.tsx`, `frontend/src/pages/Analytics/index.tsx`, `frontend/src/pages/Locality/index.tsx`, `frontend/src/pages/Map/index.tsx`, `frontend/src/components/shared/MapView.tsx` |
-| **Blast radius** | Medium — 6 files, all visual; no business logic changed; `mockMetrics`/`mockScores` still used in Analytics yields/rankings and Compare scores table |
-| **Rollback** | `git checkout HEAD -- <each file above>` |
-| **Verification** | `npx tsc --noEmit` passes; all pages use white/light token palette consistent with AppLayout |
-| **Side effects** | Locality recommendations now use real API data (not mockRecommendations); MapView markers now require real property/locality data from props |
-| **Deployment impact** | None — frontend-only, no server changes |
-
----
-
-## [Change #17] — 2026-06-15: UI Audit Remediation — Functional Bugs, Brand Fix, Debug Removal, Accessibility, DX
-
-| Field | Detail |
-|---|---|
-| **Task** | Fix all P0–P3 issues from senior design audit: wrong Signup endpoint, old brand in ForgotPassword, debug buttons in VerifyEmail, blue accent in PropertyCard, missing ARIA, duplicated API_BASE/GoogleIcon constants, redundant keyframe injection, inconsistent auth page backgrounds, missing 404 route, broken mobile score grid |
-| **Why required** | Audit scored the app 55/100 with 6 P0 defects blocking production. Most critically: Signup called `/auth/login` so no accounts were ever created. "CoimbatoreREI" was visible on ForgotPassword. Debug simulation buttons were live in production. |
-| **Files modified** | `frontend/src/hooks/useApi.ts`, `frontend/src/pages/Signup/index.tsx`, `frontend/src/pages/Login/index.tsx`, `frontend/src/pages/ForgotPassword/index.tsx`, `frontend/src/pages/VerifyEmail/index.tsx`, `frontend/src/components/shared/GoogleIcon.tsx` (NEW), `frontend/src/components/shared/PropertyCard.tsx`, `frontend/src/layouts/AppLayout.tsx`, `frontend/src/App.tsx`, `frontend/src/pages/Locality/index.tsx` |
-| **Blast radius** | Low — frontend-only. Signup endpoint fix is the only change with a backend dependency (`POST /api/v1/auth/register` must exist). |
-| **Rollback** | `git checkout HEAD` on all modified files; `rm -f frontend/src/components/shared/GoogleIcon.tsx` |
-| **Verification** | Endpoint URL, name field in body, brand copy, absence of debug block, ARIA attributes, color classes, 404 route, and grid breakpoint all confirmed in edited file state |
-| **Side effects** | Signup now requires backend `/auth/register` route. `VITE_API_BASE_URL` must be set for production builds. VerifyEmail error/expired states must be triggered via URL params only. |
-| **Deployment impact** | **MEDIUM** — `API_BASE` now reads `VITE_API_BASE_URL` env var; production Vite builds must set this or all API calls go to `localhost:8000`. See [deployment_risks.md](deployment_risks.md) Risk #8. |
+| **Task** | Expand real estate scraper coverage to Housing.com, support all formats (plots, villas, apartments for rent and sale) across 99acres and MagicBricks, implement a pure MongoDB pipeline for scraped listings ingestion and scoring, update search indexes, and bind frontend map markers to dynamic database properties. |
+| **Why required** | The scraper coverage was incomplete, relying on mock listings and lacking Housing.com. Search indexes used wrong schema fields (e.g. `locality_name` instead of `locality.name`), and frontend map views were hardcoded to mock listings. |
+| **Files modified** | `services/scraper/providers/housing.py` (NEW), `services/scraper/providers/magic_bricks.py`, `services/scraper/providers/nn_acres.py`, `services/scraper/ingest_to_db.py`, `services/scraper/main.py`, `backend/main.py`, `backend/repositories/mongo_search.py`, `frontend/src/components/shared/MapView.tsx`, `frontend/src/pages/Map/index.tsx` |
+| **Blast radius** | Low — isolated scraper backend logic, corrected backend search database mapping, and mapped client components. |
+| **Rollback** | `git checkout HEAD -- services/scraper/providers/magic_bricks.py services/scraper/providers/nn_acres.py services/scraper/ingest_to_db.py services/scraper/main.py backend/main.py backend/repositories/mongo_search.py frontend/src/components/shared/MapView.tsx frontend/src/pages/Map/index.tsx` then `rm -f services/scraper/providers/housing.py` |
+| **Verification** | `npm run build` compiled cleanly. Scraper ingestion ran successfully (`python3 services/scraper/main.py` and `python3 services/scraper/ingest_to_db.py`). Frontend maps verified as rendering dynamic listings with correct coordinates. |
+| **Side effects** | None. All operations fall back gracefully if MongoDB Atlas connectivity fails. |
+| **Deployment impact** | **MEDIUM** — Database schema indexes updated and new collections populated. |

@@ -366,6 +366,81 @@ This file records all changes proposed and implemented by the AI agent, followin
 ### 7. Why existing tests are insufficient
 * N/A. No tests were modified or bypassed.
 
+---
+
+## [Change #12] - 2026-06-13: MongoDB Direct Search Fallback and Startup Database Seeding
+
+### 1. Why the change is required
+* To ensure system stability and high availability when the local PostgreSQL database is offline. We implemented automatic MongoDB collection seeding and full-text index creation on application startup, and updated search APIs to gracefully fall back to querying MongoDB instead of PostgreSQL if database connections fail.
+
+### 2. What files are affected
+* [frontend/src/services/mockData.ts](file:///Users/trishajanath/realState/frontend/src/services/mockData.ts)
+* [backend/main.py](file:///Users/trishajanath/realState/backend/main.py)
+* [backend/services/property.py](file:///Users/trishajanath/realState/backend/services/property.py)
+* [frontend/src/hooks/useApi.ts](file:///Users/trishajanath/realState/frontend/src/hooks/useApi.ts)
+
+### 3. Potential side effects
+* None. Redirection mechanisms are automated, and fallback pipelines prevent HTTP 500 errors.
+
+### 4. Estimated blast radius
+* Low. Affects database integration layers, improving resilience.
+
+### 5. Rollback strategy
+* Revert backend database files and endpoint hooks via Git:
+  ```bash
+  git checkout HEAD -- backend/main.py backend/services/property.py frontend/src/hooks/useApi.ts frontend/src/services/mockData.ts
+  ```
+
+### 6. How correctness is verified
+* Checked backend server startup logs and verified that MongoDB Atlas is seeded and indexes are built cleanly.
+* Validated that properties endpoints route query parameters correctly to MongoDB Atlas collection scans when PostgreSQL is offline.
+
+### 7. Why existing tests are insufficient
+* N/A. No tests were modified or bypassed.
+
+---
+
+## [Change #13] - 2026-06-14: Multi-Provider Scraper Expansion & Frontend Dynamic Map Binding
+
+### 1. Why the change is required
+* To expand real estate scraper capabilities to cover Housing.com, and update existing providers (MagicBricks, 99Acres) to support all requested formats (plots/lands, villas/houses, apartments/flats for sale and rent).
+* To replace all SQL components with a pure MongoDB pipeline during scraped listings ingestion, executing metrics aggregation directly in MongoDB.
+* To correct MongoDB search indexes to query correct schema fields (e.g. `locality.name` instead of `locality_name`, `ai_description` instead of `description`), ensuring accurate full-text matches.
+* To bind the frontend map markers and details panel dynamically to fetched database properties instead of hardcoded mock listings.
+
+### 2. What files are affected
+* [services/scraper/providers/housing.py](file:///Users/trishajanath/realState/services/scraper/providers/housing.py) (NEW)
+* [services/scraper/providers/magic_bricks.py](file:///Users/trishajanath/realState/services/scraper/providers/magic_bricks.py)
+* [services/scraper/providers/nn_acres.py](file:///Users/trishajanath/realState/services/scraper/providers/nn_acres.py)
+* [services/scraper/ingest_to_db.py](file:///Users/trishajanath/realState/services/scraper/ingest_to_db.py)
+* [services/scraper/main.py](file:///Users/trishajanath/realState/services/scraper/main.py)
+* [backend/main.py](file:///Users/trishajanath/realState/backend/main.py)
+* [backend/repositories/mongo_search.py](file:///Users/trishajanath/realState/backend/repositories/mongo_search.py)
+* [frontend/src/components/shared/MapView.tsx](file:///Users/trishajanath/realState/frontend/src/components/shared/MapView.tsx)
+* [frontend/src/pages/Map/index.tsx](file:///Users/trishajanath/realState/frontend/src/pages/Map/index.tsx)
+
+### 3. Potential side effects
+* None. Enriches database entries with high-fidelity listings, corrects full-text search relevancy on the backend, and makes the map rendering pathway completely dynamic.
+
+### 4. Estimated blast radius
+* Low. Modifies scraper ingestion patterns and updates mapping component hooks to retrieve live properties.
+
+### 5. Rollback strategy
+* Revert scraper providers and frontend map component changes via Git:
+  ```bash
+  git checkout HEAD -- services/scraper/providers/magic_bricks.py services/scraper/providers/nn_acres.py services/scraper/ingest_to_db.py services/scraper/main.py backend/main.py backend/repositories/mongo_search.py frontend/src/components/shared/MapView.tsx frontend/src/pages/Map/index.tsx
+  rm -f services/scraper/providers/housing.py
+  ```
+
+### 6. How correctness is verified
+* Ran frontend compilation `npm run build` which built successfully.
+* Ran scraper pipeline runner (`python3 services/scraper/main.py`) and ingestion scripts (`python3 services/scraper/ingest_to_db.py`), inserting simulated properties with high-resolution Unsplash photos to MongoDB search index collections.
+* Checked that full-text queries for `"houses in peelamedu"` return correctly sorted matches and display accurately on map markers.
+
+### 7. Why existing tests are insufficient
+* N/A. No tests were modified or bypassed.
+
+
 
 ---
 

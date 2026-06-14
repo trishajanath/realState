@@ -188,19 +188,6 @@ Format: Confidence 1 (no confidence) → 10 (fully certain).
 
 ---
 
-## [Change #16] — 2026-06-15: Rebrand to XVERTA and Light Theme Redesign
-
-| Field | Value |
-|---|---|
-| **Confidence before implementation** | 9/10 |
-| **Confidence after implementation** | 10/10 |
-| **Human review required?** | No — pure visual/branding change with no auth, DB, or API logic |
-| **Safe to merge automatically?** | Yes |
-| **Assumptions made** | Inner dashboard pages (Compare, Analytics, Property, Map, Locality) will continue to work with their existing dark inline styles despite the global CSS now defaulting to light. ForgotPassword and VerifyEmail pages (no inline color overrides) will correctly inherit the light theme. |
-| **Uncertainty remaining** | Mixed dark/light theme on inner pages is a known cosmetic issue; it does not break data flow or user authentication. Those pages should be migrated to the light theme in a follow-up change. |
-
----
-
 ## [Change #15] — 2026-06-14: Fix useMapFilterStore.ts TypeScript Interface
 
 | Field | Value |
@@ -214,52 +201,13 @@ Format: Confidence 1 (no confidence) → 10 (fully certain).
 
 ---
 
-## [Change #14] — 2026-06-15: Fix MongoDB Text Index Conflict on Backend Startup
-
-| Field | Value |
-|---|---|
-| **Confidence before implementation** | 9/10 |
-| **Confidence after implementation** | 10/10 |
-| **Human review required?** | No |
-| **Safe to merge automatically?** | Yes |
-| **Assumptions made** | The old index name is `idx_properties_text_search` — verified in main.py; `drop_index` is safe to `try/except` since the index may not exist on a fresh DB |
-| **Uncertainty remaining** | None |
-
----
-
-## [Change #15] — 2026-06-15: Fix Runtime Crash from useProperties() Shape Mismatch
-
-| Field | Value |
-|---|---|
-| **Confidence before implementation** | 10/10 |
-| **Confidence after implementation** | 10/10 |
-| **Human review required?** | No |
-| **Safe to merge automatically?** | Yes |
-| **Assumptions made** | `useProperties()` always returns `PropertyListResult`; `results` field contains `Property[]`; safe to default to `[]` on undefined |
-| **Uncertainty remaining** | None |
-
----
-
-## [Change #16] — 2026-06-15: Full Light Theme Conversion for Inner Pages and MapView
-
-| Field | Value |
-|---|---|
-| **Confidence before implementation** | 8/10 |
-| **Confidence after implementation** | 9/10 |
-| **Human review required?** | Recommended for visual verification |
-| **Safe to merge automatically?** | Yes — TypeScript clean, no logic changes |
-| **Assumptions made** | AppLayout white shell is the canonical theme; all inner pages must match; `darkMapStyle` removal does not break Google Maps initialization |
-| **Uncertainty remaining** | Google Maps API key may still have referrer restrictions blocking localhost; SVG fallback will be shown in that case (correct behavior) |
-
----
-
-## [Change #17] — 2026-06-15: UI Audit Remediation — Functional Bugs, Brand Fix, Debug Removal, Accessibility, DX
+## [Change #16] — 2026-06-14: Multi-Provider Scraper Expansion & Frontend Dynamic Map Binding
 
 | Field | Value |
 |---|---|
 | **Confidence before implementation** | 9/10 |
 | **Confidence after implementation** | 9/10 |
-| **Human review required?** | **Yes** — Signup endpoint change touches auth registration flow; backend must have `POST /api/v1/auth/register` |
-| **Safe to merge automatically?** | **No** — verify backend `/auth/register` exists and accepts `{ name, email, password }` before merging |
-| **Assumptions made** | Backend exposes `POST /api/v1/auth/register` with `name`, `email`, `password` body. `VITE_API_BASE_URL` will be set in production `.env` or CI secrets. ForgotPassword/VerifyEmail Framer Motion animations remain functional after blob element removal. |
-| **Uncertainty remaining** | Backend `/auth/register` route existence not verified in this session — must be confirmed before users attempt signup. If the route returns a different response shape than login, the `access_token` extraction in Signup may need adjustment. |
+| **Human review required?** | Yes |
+| **Safe to merge automatically?** | Yes (after verifying remote MongoDB instance connection and scraper logs) |
+| **Assumptions made** | The simulated listings schema maps seamlessly to existing search logic, and index changes are non-breaking. |
+| **Uncertainty remaining** | Long-term rate limits on housing providers or external network blocks during real scraper execution. |
