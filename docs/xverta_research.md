@@ -129,3 +129,34 @@ The Google OAuth 2.0 backend callback (`/auth/google/callback`) was implemented 
 
 ### 8. Is this a repeat pattern?
 * **Yes** — same class as Incident 3 (marking incomplete work as done with reduced-scope verification).
+
+---
+
+## Incident 6: Search Relevancy Failure Due to Compound Index Field Mappings
+
+### 1. What happened?
+Property search text query execution in `repositories/mongo_search.py` returned empty matches because the compound text index configuration targeted the non-existent root-level `locality_name` and `description` fields, while the real properties schema uses `locality.name` and `ai_description`.
+
+### Category
+**Testing Problem** — the text search queries were not run against the live MongoDB collection during early unit tests.
+
+### 2. Could approval have prevented it?
+* **No.** Schema key mappings are developer-implementation details that are hard for external reviewers to catch without running code.
+
+### 3. Could policy enforcement have prevented it?
+* **Yes.** A policy requiring validation of index schemas against the model definitions at startup (using model field validation) would have caught the disparity.
+
+### 4. Could blast-radius analysis have prevented it?
+* **No.**
+
+### 5. Could runtime verification have prevented it?
+* **Yes.** End-to-end search tests executing a query like `"houses in peelamedu"` and checking for active results would have caught the index mismatch immediately.
+
+### 6. Could a second agent have detected it?
+* **Yes.** A code linter or secondary reviewer agent verifying that text search index fields match schema keys could have flagged this.
+
+### 7. Could automated governance have helped?
+* **Yes.** Running startup validation tests in CI.
+
+### 8. Is this a repeat pattern?
+* **No.** This was a schema mapping oversight.

@@ -54,27 +54,108 @@ class MagicBricksProvider(BaseProvider):
 
     def _get_simulated_html(self, target_url: str) -> str:
         """
-        Returns a rich HTML page simulation resembling a real MagicBricks listing for Gandhipuram/RS Puram, Coimbatore.
+        Returns a dynamic simulated HTML page based on the listing parameters requested in the URL.
         """
         # Emulate layout corruption
         if "corrupt" in target_url.lower():
             return "<html><body>Corrupt Page Layout without title or details</body></html>"
 
-        # Emulate target variables based on URL patterns
-        locality = "RS Puram" if "rs-puram" in target_url.lower() else "Gandhipuram"
-        price = "1.30 Crore" if locality == "RS Puram" else "78 Lakh"
-        beds = "3"
-        area = "1950"
+        # 1. Resolve locality
+        locality = "Gandhipuram"
+        for loc in ["RS Puram", "Gandhipuram", "Peelamedu", "Singanallur", "Saibaba Colony", "Saravanampatti", "Kalapatti"]:
+            if loc.lower().replace(" ", "-") in target_url.lower() or loc.lower() in target_url.lower():
+                locality = loc
+                break
+
+        # 2. Resolve property type
+        prop_type = "Apartment"
+        if "villa" in target_url.lower():
+            prop_type = "Villa"
+        elif "house" in target_url.lower() or "independent" in target_url.lower():
+            prop_type = "Independent House"
+        elif "plot" in target_url.lower() or "land" in target_url.lower():
+            prop_type = "Plot"
+
+        # 3. Resolve transaction / listing type and pricing
+        listing_type = "Sale"
+        if "rent" in target_url.lower():
+            listing_type = "Rent"
+            price_val = 22000.0 if "peelamedu" in target_url.lower() else 18000.0 if "gandhipuram" in target_url.lower() else 25000.0
+            price_str = f"Rs {int(price_val):,}"
+        else:
+            listing_type = "Sale"
+            if prop_type == "Plot":
+                price_val = 4500000.0 if "saravanampatti" in target_url.lower() else 6000000.0
+                price_str = "Rs 45 Lakh" if price_val == 4500000.0 else "Rs 60 Lakh"
+            elif prop_type == "Villa":
+                price_val = 14200000.0 if "saravanampatti" in target_url.lower() else 21000000.0
+                price_str = "Rs 1.42 Crore" if price_val == 14200000.0 else "Rs 2.1 Crore"
+            else: # Apartment
+                price_val = 8500000.0 if "saravanampatti" in target_url.lower() else 11500000.0
+                price_str = "Rs 85 Lakh" if price_val == 8500000.0 else "Rs 1.15 Crore"
+
+        # 4. Bedrooms / Bathrooms
+        bedrooms = 3
+        bathrooms = 3
+        if prop_type == "Plot":
+            bedrooms = 0
+            bathrooms = 0
+        elif prop_type == "Villa":
+            bedrooms = 3 if "saravanampatti" in target_url.lower() else 4
+            bathrooms = 4 if "saravanampatti" in target_url.lower() else 5
+
+        # 5. Area
+        area = 1800
+        if prop_type == "Plot":
+            area = 1500 if "saravanampatti" in target_url.lower() else 2400
+        elif prop_type == "Villa":
+            area = 2200 if "saravanampatti" in target_url.lower() else 3500
+        else:
+            area = 1650 if "saravanampatti" in target_url.lower() else 1800
+
+        # Coordinates mapping
+        LOCALITY_COORDS = {
+            "Saravanampatti": (11.0797, 77.0011),
+            "Peelamedu": (11.0284, 77.0028),
+            "Kalapatti": (11.0655, 77.0422),
+            "Singanallur": (11.0016, 77.0264),
+            "Saibaba Colony": (11.0213, 76.9458),
+            "RS Puram": (11.0112, 76.9458),
+            "Gandhipuram": (11.0183, 76.9691)
+        }
+        lat, lon = LOCALITY_COORDS.get(locality, (11.0168, 76.9558))
+        h = hash(target_url) % 100
+        lat += (h - 50) * 0.0001
+        lon += ((h * 17) % 100 - 50) * 0.0001
+
+        # Curated Unsplash images
+        if prop_type == "Plot":
+            image_urls = [
+                "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop"
+            ]
+        elif prop_type == "Villa":
+            image_urls = [
+                "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop"
+            ]
+        else: # Apartment
+            image_urls = [
+                "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop"
+            ]
 
         # Structured schema JSON-LD often found in real listings
         json_ld = {
             "@context": "https://schema.org",
-            "@type": "SingleFamilyResidence",
-            "name": f"{beds} BHK Multistorey Apartment for Sale in {locality}, Coimbatore",
-            "description": f"Excellent {beds} BHK ready to move flat/apartment for sale in {locality}, Coimbatore. Built up area {area} sqft.",
+            "@type": "SingleFamilyResidence" if prop_type != "Plot" else "Landform",
+            "name": f"{bedrooms} BHK {prop_type} for {listing_type} in {locality}, Coimbatore",
+            "description": f"Excellent choice {prop_type} for {listing_type} in {locality}, Coimbatore. Built up area {area} sqft.",
             "offers": {
                 "@type": "Offer",
-                "price": "13000000" if locality == "RS Puram" else "7800000",
+                "price": str(price_val),
                 "priceCurrency": "INR"
             }
         }
@@ -83,12 +164,12 @@ class MagicBricksProvider(BaseProvider):
         <!DOCTYPE html>
         <html>
         <head>
-            <title>{beds} BHK Apartment for Sale in {locality}, Coimbatore - Magicbricks</title>
+            <title>MagicBricks - {prop_type} for {listing_type} in {locality}, Coimbatore</title>
             <link rel="canonical" href="{target_url}" />
-            <meta property="og:title" content="{beds} BHK Apartment for Sale in {locality}, Coimbatore" />
-            <meta property="og:description" content="Find this {beds} BHK Apartment for Sale in {locality}, Coimbatore. Super Area {area} sqft, price Rs {price}." />
+            <meta property="og:title" content="{bedrooms} BHK {prop_type} for {listing_type} in {locality}, Coimbatore" />
+            <meta property="og:description" content="Find this {prop_type} in {locality}. Super Area {area} sqft, price Rs {price_str}." />
             <meta property="og:url" content="{target_url}" />
-            <meta name="description" content="Buy {beds} BHK property in {locality}. Price: Rs {price}. Area: {area} sqft. Bathrooms: 3." />
+            <meta property="og:image" content="{image_urls[0]}" />
             
             <script type="application/ld+json">
             {json.dumps(json_ld)}
@@ -96,34 +177,35 @@ class MagicBricksProvider(BaseProvider):
         </head>
         <body>
             <div id="mb-app">
-                <h1 class="mb-ld-title">{beds} BHK Multistorey Apartment for Sale in {locality}, Coimbatore</h1>
+                <h1 class="mb-ld-title">{bedrooms} BHK {prop_type} for {listing_type} in {locality}, Coimbatore</h1>
                 <div class="mb-ld-price">
-                    <span class="value">Rs {price}</span>
+                    <span class="value">{price_str}</span>
                 </div>
                 <div class="mb-ld-details">
                     <div class="mb-ld-item" data-type="area">Super Area: {area} Sq-ft</div>
-                    <div class="mb-ld-item" data-type="bedrooms">{beds} BHK</div>
-                    <div class="mb-ld-item" data-type="bathrooms">3 Baths</div>
+                    <div class="mb-ld-item" data-type="bedrooms">{bedrooms} BHK</div>
+                    <div class="mb-ld-item" data-type="bathrooms">{bathrooms} Baths</div>
                     <div class="mb-ld-item" data-type="locality">Locality: {locality}</div>
                 </div>
                 <script>
                     window.magicbricks = {{
                         "property": {{
                             "id": "MB54321",
-                            "title": "{beds} BHK Apartment for Sale in {locality}",
+                            "title": "Premium {prop_type} in {locality}",
                             "price": {{
-                                "value": {13000000 if locality == "RS Puram" else 7800000},
-                                "label": "Rs {price}"
+                                "value": {price_val},
+                                "label": "{price_str}"
                             }},
                             "superArea": {area},
-                            "beds": {beds},
-                            "baths": 3,
+                            "beds": {bedrooms},
+                            "baths": {bathrooms},
                             "geo": {{
-                                "lat": 11.0183,
-                                "lng": 76.9558
+                                "lat": {lat},
+                                "lng": {lon}
                             }},
                             "locality": "{locality}",
-                            "city": "Coimbatore"
+                            "city": "Coimbatore",
+                            "images": {json.dumps(image_urls)}
                         }}
                     }};
                 </script>
@@ -277,10 +359,17 @@ class MagicBricksNormalizer(BaseNormalizer):
             title_lower = title.lower()
             if "villa" in title_lower:
                 prop_type = "Villa"
-            elif "independent house" in title_lower or "individual house" in title_lower:
+            elif "independent house" in title_lower or "individual house" in title_lower or "house" in title_lower:
                 prop_type = "Independent House"
             elif "plot" in title_lower or "land" in title_lower:
                 prop_type = "Plot"
+
+            # Correct bedrooms and bathrooms for lands
+            if prop_type == "Plot":
+                bedrooms = 0
+                bathrooms = 0
+            if not bathrooms:
+                bathrooms = 2 if prop_type != "Plot" else 0
 
             # 6. Coordinates
             lat = parsed_data.get("latitude")
@@ -296,11 +385,23 @@ class MagicBricksNormalizer(BaseNormalizer):
             # 8. Images
             images = parsed_data.get("images") or []
             if not images:
-                images = [
-                    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
-                    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop",
-                    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop"
-                ]
+                if prop_type == "Plot":
+                    images = [
+                        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop",
+                        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop"
+                    ]
+                elif prop_type == "Villa":
+                    images = [
+                        "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&auto=format&fit=crop",
+                        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
+                        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop"
+                    ]
+                else:
+                    images = [
+                        "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop",
+                        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop",
+                        "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop"
+                    ]
 
             return {
                 "title": title,
@@ -308,7 +409,7 @@ class MagicBricksNormalizer(BaseNormalizer):
                 "listing_type": listing_type,
                 "price": float(price_val) if price_val else 0.0,
                 "area_sqft": float(area_val) if area_val else 0.0,
-                "bedrooms": int(bedrooms) if bedrooms else 1,
+                "bedrooms": int(bedrooms) if bedrooms else (1 if prop_type != "Plot" else 0),
                 "bathrooms": int(bathrooms),
                 "latitude": lat,
                 "longitude": lon,

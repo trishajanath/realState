@@ -226,3 +226,18 @@ Records every non-trivial change implemented by AI agents. Governed by [.skills/
 | **Verification** | `npm run build` passed with zero TypeScript errors |
 | **Side effects** | None |
 | **Deployment impact** | None |
+
+---
+
+## [Change #16] — 2026-06-14: Multi-Provider Scraper Expansion & Frontend Dynamic Map Binding
+
+| Field | Detail |
+|---|---|
+| **Task** | Expand real estate scraper coverage to Housing.com, support all formats (plots, villas, apartments for rent and sale) across 99acres and MagicBricks, implement a pure MongoDB pipeline for scraped listings ingestion and scoring, update search indexes, and bind frontend map markers to dynamic database properties. |
+| **Why required** | The scraper coverage was incomplete, relying on mock listings and lacking Housing.com. Search indexes used wrong schema fields (e.g. `locality_name` instead of `locality.name`), and frontend map views were hardcoded to mock listings. |
+| **Files modified** | `services/scraper/providers/housing.py` (NEW), `services/scraper/providers/magic_bricks.py`, `services/scraper/providers/nn_acres.py`, `services/scraper/ingest_to_db.py`, `services/scraper/main.py`, `backend/main.py`, `backend/repositories/mongo_search.py`, `frontend/src/components/shared/MapView.tsx`, `frontend/src/pages/Map/index.tsx` |
+| **Blast radius** | Low — isolated scraper backend logic, corrected backend search database mapping, and mapped client components. |
+| **Rollback** | `git checkout HEAD -- services/scraper/providers/magic_bricks.py services/scraper/providers/nn_acres.py services/scraper/ingest_to_db.py services/scraper/main.py backend/main.py backend/repositories/mongo_search.py frontend/src/components/shared/MapView.tsx frontend/src/pages/Map/index.tsx` then `rm -f services/scraper/providers/housing.py` |
+| **Verification** | `npm run build` compiled cleanly. Scraper ingestion ran successfully (`python3 services/scraper/main.py` and `python3 services/scraper/ingest_to_db.py`). Frontend maps verified as rendering dynamic listings with correct coordinates. |
+| **Side effects** | None. All operations fall back gracefully if MongoDB Atlas connectivity fails. |
+| **Deployment impact** | **MEDIUM** — Database schema indexes updated and new collections populated. |

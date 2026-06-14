@@ -243,12 +243,23 @@ async def lifespan(app: FastAPI):
             await collection.replace_one({"id": prop["id"]}, prop, upsert=True)
         logger.info(f"Synced {len(SEED_PROPERTIES)} properties into MongoDB search index.")
         
-        # Ensure text index is created
+        # Drop old text index if it exists to prevent conflict on field list changes
+        try:
+            indexes = await collection.index_information()
+            if "idx_properties_text_search" in indexes:
+                await collection.drop_index("idx_properties_text_search")
+                logger.info("Dropped old MongoDB text search index on startup.")
+        except Exception as e:
+            logger.warning("Could not check/drop old text index on startup", error=str(e))
+            
+        # Ensure text index is created with correct fields
         await collection.create_index(
             [
                 ("title", "text"),
-                ("locality_name", "text"),
-                ("description", "text")
+                ("locality.name", "text"),
+                ("property_type", "text"),
+                ("listing_type", "text"),
+                ("ai_description", "text")
             ],
             name="idx_properties_text_search"
         )

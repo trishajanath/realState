@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMapFilterStore } from '../../store/useMapFilterStore';
 import { mockLocalities, mockProperties, mockAmenities, mockScores, mockMetrics } from '../../services/mockData';
+import { useLocalities, useProperties } from '../../hooks/useApi';
 import type { Property } from '../../types';
 import { Navigation, Compass, Radio, Info } from 'lucide-react';
 
@@ -48,6 +49,13 @@ export const MapView: React.FC<MapViewProps> = ({
   
   // Zustand States
   const store = useMapFilterStore();
+  
+  // Fetch dynamic database data
+  const { data: properties } = useProperties();
+  const { data: localities } = useLocalities();
+
+  const allProperties = properties || mockProperties;
+  const allLocalities = localities || mockLocalities;
   
   // Loading, Fallback & Error states
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -211,13 +219,13 @@ export const MapView: React.FC<MapViewProps> = ({
     if (!mapRef.current || useMockFallback) return;
 
     if (store.selectedPropertyId) {
-      const prop = mockProperties.find(p => p.id === store.selectedPropertyId);
+      const prop = allProperties.find(p => p.id === store.selectedPropertyId);
       if (prop && prop.latitude && prop.longitude) {
         mapRef.current.panTo({ lat: prop.latitude, lng: prop.longitude });
         mapRef.current.setZoom(15);
       }
     } else if (store.selectedLocalityId) {
-      const loc = mockLocalities.find(l => l.id === store.selectedLocalityId);
+      const loc = allLocalities.find(l => l.id === store.selectedLocalityId);
       if (loc && loc.latitude && loc.longitude) {
         mapRef.current.panTo({ lat: loc.latitude, lng: loc.longitude });
         mapRef.current.setZoom(14);
@@ -290,7 +298,7 @@ export const MapView: React.FC<MapViewProps> = ({
     markersRef.current.forEach(m => m.setMap(null));
     markersRef.current = [];
 
-    const activeProperties = mockProperties.filter(prop => {
+    const activeProperties = allProperties.filter(prop => {
       // 1. Price budget
       if (prop.price < store.priceMin || prop.price > store.priceMax) return false;
       
@@ -342,7 +350,7 @@ export const MapView: React.FC<MapViewProps> = ({
         }
 
         // 3. Locality check
-        const matchedLocality = mockLocalities.find(l => query.includes(l.name.toLowerCase()));
+        const matchedLocality = allLocalities.find(l => query.includes(l.name.toLowerCase()));
         if (matchedLocality && prop.locality_id !== matchedLocality.id) {
           return false;
         }
@@ -486,7 +494,7 @@ export const MapView: React.FC<MapViewProps> = ({
     polygonsRef.current = [];
 
     if (mapZoom < 14) {
-      mockLocalities.forEach((loc) => {
+      allLocalities.forEach((loc) => {
         if (!loc.latitude || !loc.longitude) return;
 
         const points = [];
@@ -508,7 +516,7 @@ export const MapView: React.FC<MapViewProps> = ({
         else if (scores.investment_score && scores.investment_score < 80) color = '#f59e0b';
 
         const isLocalityHighlighted = store.selectedLocalityId === loc.id;
-        const selectedProperty = mockProperties.find(p => p.id === store.selectedPropertyId);
+        const selectedProperty = allProperties.find(p => p.id === store.selectedPropertyId);
         const isPropertyContext = selectedProperty && selectedProperty.locality_id === loc.id;
         const shouldShowBoundaries = store.showLocalityBoundaries || isLocalityHighlighted || isPropertyContext;
 
@@ -562,7 +570,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const points: any[] = [];
 
-    mockProperties.forEach(prop => {
+    allProperties.forEach(prop => {
       if (!prop.latitude || !prop.longitude) return;
 
       let weight = 1;
@@ -585,7 +593,7 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     });
 
-    mockLocalities.forEach(loc => {
+    allLocalities.forEach(loc => {
       if (!loc.latitude || !loc.longitude) return;
       const scores = mockScores[loc.id] || {};
       const metrics = mockMetrics[loc.id] || {};
@@ -698,7 +706,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
       // Directions Rendering (Property to Commute Destination)
       if (store.selectedPropertyId) {
-        const prop = mockProperties.find(p => p.id === store.selectedPropertyId);
+        const prop = allProperties.find(p => p.id === store.selectedPropertyId);
         if (prop && prop.latitude && prop.longitude) {
           const origin = new google.maps.LatLng(prop.latitude, prop.longitude);
           
@@ -745,12 +753,12 @@ export const MapView: React.FC<MapViewProps> = ({
     
     let center = map.getCenter();
     if (store.selectedPropertyId) {
-      const prop = mockProperties.find(p => p.id === store.selectedPropertyId);
+      const prop = allProperties.find(p => p.id === store.selectedPropertyId);
       if (prop && prop.latitude && prop.longitude) {
         center = new google.maps.LatLng(prop.latitude, prop.longitude);
       }
     } else if (store.selectedLocalityId) {
-      const loc = mockLocalities.find(l => l.id === store.selectedLocalityId);
+      const loc = allLocalities.find(l => l.id === store.selectedLocalityId);
       if (loc && loc.latitude && loc.longitude) {
         center = new google.maps.LatLng(loc.latitude, loc.longitude);
       }
@@ -890,7 +898,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
   // Filter properties logic for fallback SVG rendering
   const getFilteredPropertiesForFallback = () => {
-    return mockProperties.filter(prop => {
+    return allProperties.filter(prop => {
       if (prop.price < store.priceMin || prop.price > store.priceMax) return false;
       if (store.propertyType !== 'All' && prop.property_type !== store.propertyType) return false;
       if (store.newProjectsFilter !== 'all') {
@@ -916,7 +924,7 @@ export const MapView: React.FC<MapViewProps> = ({
         }
 
         // 3. Locality check
-        const matchedLocality = mockLocalities.find(l => query.includes(l.name.toLowerCase()));
+        const matchedLocality = allLocalities.find(l => query.includes(l.name.toLowerCase()));
         if (matchedLocality && prop.locality_id !== matchedLocality.id) {
           return false;
         }
@@ -1033,7 +1041,7 @@ export const MapView: React.FC<MapViewProps> = ({
             {/* Price/Potential Heatmap layers */}
             {store.activeHeatmap !== 'none' && (
               <g opacity="0.8">
-                {mockLocalities.map(loc => (
+                {allLocalities.map(loc => (
                   <circle
                     key={`fallback-heat-${loc.id}`}
                     cx={lonToX(loc.longitude)}
@@ -1047,9 +1055,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
             {/* Connection roads (dashed) */}
             <g stroke="#2A2A2A" strokeWidth="1.25" strokeDasharray="3 3" fill="none" opacity="0.8">
-              {mockLocalities.map((loc, idx) => {
-                if (idx === mockLocalities.length - 1) return null;
-                const nextLoc = mockLocalities[idx + 1];
+              {allLocalities.map((loc, idx) => {
+                if (idx === allLocalities.length - 1) return null;
+                const nextLoc = allLocalities[idx + 1];
                 return (
                   <line 
                     key={`road-link-${idx}`} 
@@ -1064,7 +1072,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
             {/* Locality polygon boundaries (visible when zoomed out slightly) */}
             <g>
-              {mockLocalities.map((loc) => {
+              {allLocalities.map((loc) => {
                 const cx = lonToX(loc.longitude);
                 const cy = latToY(loc.latitude);
                 
@@ -1085,7 +1093,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 const scores = mockScores[loc.id] || {};
 
                 const isLocalityHighlighted = store.selectedLocalityId === loc.id;
-                const selectedProperty = mockProperties.find(p => p.id === store.selectedPropertyId);
+                const selectedProperty = allProperties.find(p => p.id === store.selectedPropertyId);
                 const isPropertyContext = selectedProperty && selectedProperty.locality_id === loc.id;
                 const shouldShowBoundaries = store.showLocalityBoundaries || isLocalityHighlighted || isPropertyContext;
 

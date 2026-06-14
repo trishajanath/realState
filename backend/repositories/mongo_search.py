@@ -17,12 +17,23 @@ class MongoSearchRepository:
         Creates a text index on property text fields for full-text search.
         """
         try:
+            # Drop old text index if it exists to prevent conflict on field list changes
+            try:
+                indexes = await self.collection.index_information()
+                if "idx_properties_text_search" in indexes:
+                    await self.collection.drop_index("idx_properties_text_search")
+                    logger.info("Dropped old MongoDB text search index in repository.")
+            except Exception as e:
+                logger.warning("Could not check/drop old text index in repository", error=str(e))
+
             # Create compound text index
             await self.collection.create_index(
                 [
                     ("title", "text"),
-                    ("locality_name", "text"),
-                    ("description", "text")
+                    ("locality.name", "text"),
+                    ("property_type", "text"),
+                    ("listing_type", "text"),
+                    ("ai_description", "text")
                 ],
                 name="idx_properties_text_search"
             )

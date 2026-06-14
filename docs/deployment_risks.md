@@ -87,3 +87,17 @@ Any change to auth, database schema, or secrets **requires human sign-off in [ag
 | **Downtime potential** | None — restricting CORS is additive |
 | **User impact** | None for legitimate users; eliminates cross-origin attack vector |
 | **Pre-deploy checklist** | ☐ Replace `allow_origins=["*"]` with `["https://yourdomain.com", "https://www.yourdomain.com"]` · ☐ Add `CORS_ORIGINS` as a configurable environment variable in `config.py` · ☐ Test that frontend on the production domain can still reach the backend API |
+
+---
+
+## Risk #7 — MongoDB Text Search Index Update (Change #16)
+
+| Field | Detail |
+|---|---|
+| **Change** | Modified compound text index fields to target `locality.name` instead of root-level `locality_name` |
+| **Risk level** | LOW |
+| **Blast radius** | Backend text search query executions — if the index fails to create, search queries fallback to regular scans, slightly degrading performance |
+| **Rollback complexity** | Low — recreate the index with the previous pattern |
+| **Downtime potential** | None |
+| **User impact** | None — search queries perform fast text matches against locality names |
+| **Pre-deploy checklist** | ☐ Verify that the database user has permissions to drop and create indexes in MongoDB · ☐ Run the database startup scripts to ensure correct index creation |

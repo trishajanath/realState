@@ -198,3 +198,16 @@ Format: Confidence 1 (no confidence) → 10 (fully certain).
 | **Safe to merge automatically?** | Yes |
 | **Assumptions made** | `newProjectsAge` should be typed as `string` (not a union) to accommodate future filter values beyond `'all'` |
 | **Uncertainty remaining** | None |
+
+---
+
+## [Change #16] — 2026-06-14: Multi-Provider Scraper Expansion & Frontend Dynamic Map Binding
+
+| Field | Value |
+|---|---|
+| **Confidence before implementation** | 9/10 |
+| **Confidence after implementation** | 9/10 |
+| **Human review required?** | Yes |
+| **Safe to merge automatically?** | Yes (after verifying remote MongoDB instance connection and scraper logs) |
+| **Assumptions made** | The simulated listings schema maps seamlessly to existing search logic, and index changes are non-breaking. |
+| **Uncertainty remaining** | Long-term rate limits on housing providers or external network blocks during real scraper execution. |

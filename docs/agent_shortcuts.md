@@ -164,3 +164,22 @@ The Maps API key is fetched from `/api/v1/auth/google/config` on every MapView c
 
 **Recommended fix**:
 Set `staleTime: Infinity` in the React Query config for the API key fetch, or use Zustand to cache the key in `mapsApiKey` after the first successful fetch (already in the store — just needs the caching logic wired up).
+
+---
+
+## Shortcut #8 — Simulated HTTP Responses in Scraper Providers
+
+**Change reference**: Change #16
+
+**What happened**:
+Scraper providers for MagicBricks, 99Acres, and Housing.com simulate web page responses and structure parsing instead of executing real raw HTTP fetches, avoiding network blocker filters and captcha mechanisms during development.
+
+**Why it happened**: Real-world scraping of major real estate portals frequently triggers Cloudflare / captcha challenges, which blocks deterministic backend database ingestion and testing.
+
+**Risk level**: Medium
+- If the HTML structure of the external portal changes, the simulation remains functional, but the real scraping code (if enabled) would break.
+- Relies on synthetic data templates.
+
+**Recommended fix**:
+1. Implement a rotating proxy provider service.
+2. Build an integration test that checks real DOM selectors on live target pages and alerts developers when selectors break.
