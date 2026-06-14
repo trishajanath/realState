@@ -1,150 +1,40 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
-  postgres:
-    image: postgis/postgis:15-3.3-alpine
-    container_name: realstate_postgres
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres_secure_password_coimbatore}
-      - POSTGRES_DB=${POSTGRES_DB:-realstate_db}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-realstate_db}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
   mongodb:
-    image: mongo:6.0
-    container_name: realstate_mongodb
+    image: mongo:7.0
+    container_name: mongodb
     ports:
-      - "${MONGODB_PORT:-27017}:27017"
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: mongodb_secure_password
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
+      start_period: 20s
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: realstate_backend
-    env_file:
-      - .env
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
     environment:
-      # Override host inside Docker network to point to the service containers
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_password_coimbatore}@postgres:5432/${POSTGRES_DB:-realstate_db}
-      - MONGODB_URL=mongodb://mongodb:27017
-    ports:
-      - "${APP_PORT:-8000}:8000"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secure_password_coimbatore
+      POSTGRES_DB: realstate_db
     volumes:
-      - ./backend:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-    networks:
-      - app-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: realstate_redis
-    ports:
-      - "6379:6379"
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
-
-  locality_intelligence:
-    build:
-      context: .
-      dockerfile: ./services/locality_intelligence/Dockerfile
-    container_name: realstate_locality_intelligence
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_password_coimbatore}@postgres:5432/${POSTGRES_DB:-realstate_db}
-      - REDIS_URL=redis://redis:6379/0
-    ports:
-      - "8001:8001"
-    volumes:
-      - ./services/locality_intelligence:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
-
-  amenity_intelligence:
-    build:
-      context: .
-      dockerfile: ./services/amenity_intelligence/Dockerfile
-    container_name: realstate_amenity_intelligence
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_password_coimbatore}@postgres:5432/${POSTGRES_DB:-realstate_db}
-      - REDIS_URL=redis://redis:6379/0
-    ports:
-      - "8002:8002"
-    volumes:
-      - ./services/amenity_intelligence:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
-
-  recommendation_engine:
-    build:
-      context: .
-      dockerfile: ./services/recommendation_engine/Dockerfile
-    container_name: realstate_recommendation_engine
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_password_coimbatore}@postgres:5432/${POSTGRES_DB:-realstate_db}
-      - REDIS_URL=redis://redis:6379/0
-    ports:
-      - "8003:8003"
-    volumes:
-      - ./services/recommendation_engine:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
 
 volumes:
-  postgres_data:
   mongodb_data:
-
-networks:
-  app-network:
-    driver: bridge
+  postgres_data:

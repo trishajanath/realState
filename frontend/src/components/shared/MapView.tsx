@@ -12,24 +12,30 @@ interface MapViewProps {
   height?: string;
 }
 
-// Custom Premium Google Maps styling
-const silverMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
-  { elementType: "labels.icon", stylers: [{ visibility: "on" }, { saturation: -80 }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
-  { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#eeeeee" }] },
-  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-  { featureType: "road.arterial", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dadada" }] },
-  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-  { featureType: "road.local", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] },
-  { featureType: "transit.line", elementType: "geometry", stylers: [{ color: "#e5e5e5" }] },
-  { featureType: "transit.station", elementType: "geometry", stylers: [{ color: "#eeeeee" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9c9c9" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] }
+// Dark enterprise Google Maps style — matches monochrome design system
+const darkMapStyle = [
+  { elementType: "geometry", stylers: [{ color: "#0A0A0A" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#52525B" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#000000" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#1C1C1C" }] },
+  { featureType: "administrative.country", elementType: "labels.text.fill", stylers: [{ color: "#71717A" }] },
+  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#A1A1AA" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#3F3F46" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#111111" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#3F3F46" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#1C1C1C" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#111111" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#52525B" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2A2A2A" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#3F3F46" }] },
+  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#A1A1AA" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#111111" }] },
+  { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#52525B" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3F3F46" }] },
+  { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#000000" }] }
 ];
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -167,7 +173,7 @@ export const MapView: React.FC<MapViewProps> = ({
       const map = new google.maps.Map(mapContainerRef.current, {
         center: coimbatoreCenter,
         zoom: mapZoom,
-        styles: silverMapStyle as any,
+        styles: darkMapStyle as any,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
@@ -966,24 +972,27 @@ export const MapView: React.FC<MapViewProps> = ({
   const activePropertiesForFallback = getFilteredPropertiesForFallback();
 
   return (
-    <div className={`relative w-full ${height} bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-inner flex flex-col items-center justify-center`}>
-      
+    <div
+      className={`relative w-full ${height} overflow-hidden`}
+      style={{ backgroundColor: '#000000', border: '1px solid #1F1F1F', borderRadius: '8px' }}
+    >
+
       {/* Loading Skeleton */}
       {!isLoaded && !loadError && !useMockFallback && (
-        <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center z-45 animate-pulse">
-          <Radio className="h-10 w-10 text-blue-500 animate-pulse mb-3" />
-          <span className="text-xs font-mono tracking-wider font-semibold text-slate-500 uppercase">Geospatial engine booting...</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-40" style={{ backgroundColor: '#000000' }}>
+          <Radio className="h-8 w-8 mb-3" style={{ color: '#3F3F46' }} />
+          <span className="text-xs font-mono tracking-wider uppercase" style={{ color: '#52525B' }}>Initializing map...</span>
         </div>
       )}
 
-      {/* Interactive Fallback Map (Drawn as robust Vector SVG Canvas) */}
+      {/* Interactive Fallback Map (Vector SVG Canvas) */}
       {useMockFallback ? (
-        <div className="w-full h-full relative z-10 bg-slate-950 flex items-center justify-center overflow-auto">
-          
-          {/* Fallback Banner indicator */}
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full flex items-center gap-2 text-[10px] font-mono tracking-wider font-bold text-amber-400 uppercase z-30 shadow-md backdrop-blur-sm">
-            <Info className="h-3.5 w-3.5 animate-pulse" />
-            <span>Maps fallback vector overlay active</span>
+        <div className="w-full h-full relative z-10 flex items-center justify-center overflow-auto" style={{ backgroundColor: '#000000' }}>
+
+          {/* Fallback Banner */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1 flex items-center gap-2 text-[10px] font-mono tracking-wider uppercase z-30" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', borderRadius: '6px', color: '#52525B' }}>
+            <Info className="h-3 w-3" />
+            <span>Vector fallback active</span>
           </div>
 
           <svg 
@@ -993,7 +1002,7 @@ export const MapView: React.FC<MapViewProps> = ({
             {/* Grid Map Background representing Coimbatore sectors */}
             <defs>
               <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" strokeWidth="0.75" />
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1C1C1C" strokeWidth="0.75" />
               </pattern>
 
               {/* Heatmap Gradients definitions */}
@@ -1036,8 +1045,8 @@ export const MapView: React.FC<MapViewProps> = ({
               </g>
             )}
 
-            {/* Connection Highways and roads (drawn as dash lines) */}
-            <g stroke="#334155" strokeWidth="1.25" strokeDasharray="3 3" fill="none" opacity="0.6">
+            {/* Connection roads (dashed) */}
+            <g stroke="#2A2A2A" strokeWidth="1.25" strokeDasharray="3 3" fill="none" opacity="0.8">
               {mockLocalities.map((loc, idx) => {
                 if (idx === mockLocalities.length - 1) return null;
                 const nextLoc = mockLocalities[idx + 1];
@@ -1083,22 +1092,22 @@ export const MapView: React.FC<MapViewProps> = ({
                 if (!shouldShowBoundaries) {
                   return (
                     <g key={`fallback-loc-${loc.id}`}>
-                      <circle 
-                        cx={cx} 
-                        cy={cy} 
-                        r="3.5" 
-                        fill={color} 
-                        stroke="#0f172a" 
-                        strokeWidth="1" 
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r="3.5"
+                        fill={color}
+                        stroke="#000000"
+                        strokeWidth="1"
                       />
-                      <text 
-                        x={cx} 
-                        y={cy - 7} 
-                        fontSize="8" 
-                        fontWeight="bold" 
-                        fill="#475569" 
+                      <text
+                        x={cx}
+                        y={cy - 7}
+                        fontSize="8"
+                        fontWeight="600"
+                        fill="#52525B"
                         textAnchor="middle"
-                        className="pointer-events-none font-mono"
+                        className="pointer-events-none"
                       >
                         {loc.name}
                       </text>
@@ -1127,21 +1136,21 @@ export const MapView: React.FC<MapViewProps> = ({
                       onMouseLeave={() => setLocalityStats(null)}
                     />
                     
-                    {/* Centroid small indicator dot */}
-                    <circle 
-                      cx={cx} 
-                      cy={cy} 
-                      r="4" 
-                      fill={color} 
-                      stroke="#0f172a" 
-                      strokeWidth="1" 
+                    {/* Centroid indicator dot */}
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r="4"
+                      fill={color}
+                      stroke="#000000"
+                      strokeWidth="1"
                     />
-                    <text 
-                      x={cx} 
-                      y={cy - 8} 
-                      fontSize="9" 
-                      fontWeight="bold" 
-                      fill="#94a3b8" 
+                    <text
+                      x={cx}
+                      y={cy - 8}
+                      fontSize="9"
+                      fontWeight="600"
+                      fill="#71717A"
                       textAnchor="middle"
                       className="pointer-events-none"
                     >
@@ -1314,40 +1323,54 @@ export const MapView: React.FC<MapViewProps> = ({
         <div ref={mapContainerRef} className="w-full h-full z-10" />
       )}
 
-      {/* Hover locality statistic panel display */}
+      {/* Locality stats hover panel */}
       {localityStats && (
-        <div className="absolute top-4 left-4 bg-slate-900/95 backdrop-blur px-3 py-2.5 rounded-xl border border-slate-800 shadow-lg z-30 pointer-events-none w-64 animate-in fade-in duration-200 text-white">
-          <h5 className="font-extrabold text-slate-200 text-xs font-display">{localityStats.name}</h5>
-          <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] font-mono border-t border-slate-850 pt-2 text-slate-400">
-            <div>Avg Price: <span className="font-bold text-slate-200">₹{localityStats.price}/SqFt</span></div>
-            <div>Growth Index: <span className="font-bold text-slate-200">+{localityStats.growth}%</span></div>
-            <div>Safety Score: <span className="font-bold text-slate-200">{localityStats.safety}/100</span></div>
-            <div>Investment: <span className="font-bold text-emerald-400 font-sans">{localityStats.investment}/100</span></div>
+        <div
+          className="absolute top-4 left-4 z-30 pointer-events-none w-56"
+          style={{ backgroundColor: '#0A0A0A', border: '1px solid #2A2A2A', borderRadius: '8px', padding: '12px' }}
+        >
+          <div className="text-xs font-semibold mb-2" style={{ color: '#FFFFFF' }}>{localityStats.name}</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]" style={{ borderTop: '1px solid #1F1F1F', paddingTop: '8px' }}>
+            <div style={{ color: '#52525B' }}>Avg Price</div>
+            <div className="font-medium" style={{ color: '#FFFFFF' }}>₹{localityStats.price}/sqft</div>
+            <div style={{ color: '#52525B' }}>Growth</div>
+            <div className="font-medium" style={{ color: '#FFFFFF' }}>+{localityStats.growth}%</div>
+            <div style={{ color: '#52525B' }}>Safety</div>
+            <div className="font-medium" style={{ color: '#FFFFFF' }}>{localityStats.safety}/100</div>
+            <div style={{ color: '#52525B' }}>Investment</div>
+            <div className="font-medium" style={{ color: '#FFFFFF' }}>{localityStats.investment}/100</div>
           </div>
         </div>
       )}
 
-      {/* Heatmap overlay active legend HUD */}
+      {/* Heatmap legend */}
       {store.activeHeatmap !== 'none' && (
-        <div className="absolute bottom-5 right-16 bg-slate-900/95 backdrop-blur px-3 py-2 rounded-xl border border-slate-800 shadow-md z-30 text-[9px] font-mono flex items-center gap-2 text-slate-300">
-          <div className="h-3 w-24 rounded bg-gradient-to-r from-blue-500 via-green-500 via-yellow-500 to-red-500" />
-          <span className="font-bold text-slate-400 text-[10px]">
-            {store.activeHeatmap.toUpperCase()} DENSITY (Low &rarr; High)
-          </span>
+        <div
+          className="absolute bottom-4 right-4 z-30 flex items-center gap-2 text-[10px] font-mono uppercase"
+          style={{ backgroundColor: '#0A0A0A', border: '1px solid #2A2A2A', borderRadius: '6px', padding: '6px 10px', color: '#71717A' }}
+        >
+          <div style={{ height: '6px', width: '64px', borderRadius: '3px', background: 'linear-gradient(to right, #3F3F46, #FFFFFF)' }} />
+          <span>{store.activeHeatmap} density</span>
         </div>
       )}
 
-      {/* Live tracking overlay header */}
-      <div className="absolute top-4 right-4 bg-slate-900/95 backdrop-blur px-3 py-2 rounded-xl border border-slate-800 shadow flex items-center gap-2 text-[10px] uppercase font-mono tracking-wider font-semibold text-slate-350 z-20">
-        <Radio className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
-        <span>GIS Vector Sensors Active</span>
+      {/* Live feed badge */}
+      <div
+        className="absolute top-3 right-3 z-20 flex items-center gap-1.5 text-[10px] font-mono uppercase"
+        style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F', borderRadius: '6px', padding: '4px 8px', color: '#52525B' }}
+      >
+        <Radio className="h-3 w-3" style={{ color: '#3F3F46' }} />
+        <span>Live</span>
       </div>
 
-      {/* Compass calibration footer HUD */}
-      <div className="absolute bottom-5 left-5 bg-slate-900/95 backdrop-blur px-3 py-2.5 rounded-2xl border border-slate-800 shadow-lg flex items-center gap-4 text-xs font-semibold text-slate-300 z-20">
-        <span className="flex items-center gap-1"><Compass className="h-4 w-4 text-slate-500" /> N 11.01° | E 76.95°</span>
-        <span className="h-4 w-px bg-slate-800" />
-        <span className="flex items-center gap-1"><Navigation className="h-4 w-4 text-blue-500 animate-pulse" /> Coimbatore Center</span>
+      {/* Compass footer */}
+      <div
+        className="absolute bottom-3 left-3 z-20 flex items-center gap-3 text-[10px]"
+        style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F', borderRadius: '6px', padding: '5px 10px', color: '#52525B' }}
+      >
+        <span className="flex items-center gap-1"><Compass className="h-3 w-3" /> 11.01°N 76.95°E</span>
+        <span style={{ width: '1px', height: '10px', backgroundColor: '#2A2A2A' }} />
+        <span className="flex items-center gap-1"><Navigation className="h-3 w-3" /> Coimbatore</span>
       </div>
     </div>
   );

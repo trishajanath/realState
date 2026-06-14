@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
 interface DialogContextProps {
@@ -20,7 +19,7 @@ export const Dialog: React.FC<{
 
   const setIsOpen = (val: boolean) => {
     if (!isControlled) setLocalOpen(val);
-    if (onOpenChange) onOpenChange(val);
+    onOpenChange?.(val);
   };
 
   return (
@@ -30,81 +29,56 @@ export const Dialog: React.FC<{
   );
 };
 
-export const DialogTrigger: React.FC<{ children: React.ReactElement<any>; asChild?: boolean }> = ({
-  children,
-}) => {
+export const DialogTrigger: React.FC<{ children: React.ReactElement<any>; asChild?: boolean }> = ({ children }) => {
   const ctx = useContext(DialogContext);
-  if (!ctx) throw new Error('DialogTrigger must be used within Dialog');
-
-  const trigger = children as React.ReactElement<any>;
-
-  return React.cloneElement(trigger, {
+  if (!ctx) throw new Error('DialogTrigger must be inside Dialog');
+  return React.cloneElement(children, {
     onClick: (e: React.MouseEvent) => {
-      if (trigger.props && trigger.props.onClick) trigger.props.onClick(e);
+      children.props?.onClick?.(e);
       ctx.setIsOpen(true);
-    }
+    },
   });
 };
 
-export const DialogContent: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = ''
-}) => {
+export const DialogContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
   const ctx = useContext(DialogContext);
-  if (!ctx) throw new Error('DialogContent must be used within Dialog');
+  if (!ctx) throw new Error('DialogContent must be inside Dialog');
+  if (!ctx.isOpen) return null;
 
   return (
-    <AnimatePresence>
-      {ctx.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => ctx.setIsOpen(false)}
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
-          />
-
-          {/* Modal Content */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: 'spring', duration: 0.3 }}
-            className={`relative w-full max-w-lg rounded-2xl border border-slate-200/50 bg-white p-6 shadow-2xl z-10 ${className}`}
-          >
-            {children}
-            <button
-              onClick={() => ctx.setIsOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0"
+        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+        onClick={() => ctx.setIsOpen(false)}
+      />
+      <div
+        className={`relative w-full max-w-lg p-6 rounded-lg z-10 ${className}`}
+        style={{ backgroundColor: '#0A0A0A', border: '1px solid #2A2A2A', color: '#FFFFFF' }}
+      >
+        {children}
+        <button
+          onClick={() => ctx.setIsOpen(false)}
+          className="absolute right-4 top-4 p-1 rounded transition-colors"
+          style={{ color: '#71717A' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#FFFFFF'; (e.currentTarget as HTMLElement).style.backgroundColor = '#111111'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#71717A'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 };
 
-export const DialogHeader: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = ''
-}) => (
-  <div className={`flex flex-col space-y-1.5 text-left ${className}`}>{children}</div>
+export const DialogHeader: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`flex flex-col gap-1.5 mb-4 ${className}`}>{children}</div>
 );
 
-export const DialogTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = ''
-}) => (
-  <h2 className={`text-base font-bold font-display leading-none tracking-tight text-slate-900 ${className}`}>{children}</h2>
+export const DialogTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <h2 className={`text-base font-semibold leading-none ${className}`} style={{ color: '#FFFFFF' }}>{children}</h2>
 );
 
-export const DialogDescription: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = ''
-}) => (
-  <p className={`text-xs text-slate-500 font-sans mt-1.5 ${className}`}>{children}</p>
+export const DialogDescription: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <p className={`text-sm ${className}`} style={{ color: '#71717A' }}>{children}</p>
 );

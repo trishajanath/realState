@@ -35,6 +35,7 @@ interface MapFilterState {
   propertyStatus: 'all' | 'pre-launch' | 'under-construction' | 'ready';
   sortBy: 'price-asc' | 'price-desc' | 'investment' | 'yield' | 'newest';
   showLocalityBoundaries: boolean;
+  newProjectsAge: string;
   
   setFilters: (filters: Partial<Omit<MapFilterState, 'setFilters' | 'toggleAmenity' | 'saveProperty' | 'unsaveProperty' | 'createCollection' | 'addPropertyToCollection' | 'removePropertyFromCollection' | 'toggleComparedProperty' | 'clearComparedProperties'>>) => void;
   toggleAmenity: (category: string) => void;

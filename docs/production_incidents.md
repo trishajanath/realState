@@ -81,3 +81,36 @@ A database migration altering columns on the core users/payments table was deplo
 
 ### 5. Could another agent have detected it?
 * **Yes.** A query performance analyzer agent could inspect the SQL migration and flag execution paths that cause full table locks.
+
+---
+
+## Incident 5: INC-2026-06-14
+**Title**: Backend MongoDB Connection Failure in Local Development (Wrong Default Hostname)
+
+### 1. What happened?
+The FastAPI backend defaulted `MONGODB_URL` to `mongodb://mongodb:27017` — a Docker internal network hostname. With no `.env` file at the project root, every local backend startup silently failed to connect to MongoDB with the error: `"No servers found yet, Timeout: 5.0s"`. The `/api/v1/health` endpoint returned `mongodb: unhealthy`, blocking all property and auth API responses.
+
+- **Root cause**: `backend/core/config.py` baked a Docker-specific hostname as the default, with no validation on startup, and no `.env` file existed to override it for local development.
+- **Detection method**: Manual inspection of backend terminal logs after observing that all frontend API calls were falling back to mock data.
+- **Resolution**: Created `.env` at project root with `MONGODB_URL=mongodb://localhost:27017`. Backend `/api/v1/health` returned `mongodb: healthy` immediately after restart.
+- **Time to resolution**: ~15 minutes (investigation + fix)
+- **Preventative action**:
+  1. Add a startup validation in `backend/main.py` that tests the MongoDB connection before accepting traffic and logs a human-readable error if it fails: `"ERROR: Cannot connect to MongoDB at {MONGODB_URL}. Is the database running?"`
+  2. Create a `.env.example` file with all required variables and their safe placeholder values, and reference it in the README setup steps
+  3. Add `MONGODB_URL` validation to the CI health check step
+
+---
+
+## Incident 6: INC-2026-06-14
+**Title**: Amenity Service 422 Errors Due to Unsupported Query Parameter
+
+### 1. What happened?
+The `useAmenities()` hook in `frontend/src/hooks/useApi.ts` called the amenity service with `/amenities?locality_id=${localityId}`. The amenity FastAPI service (`services/amenity_intelligence/main.py`) does not define `locality_id` as an accepted query parameter — its `/amenities` endpoint only accepts `category`, `source`, `search`, `limit`, and `offset`. Every call returned HTTP 422 Unprocessable Entity, causing all amenity data to fall back to mock without a meaningful error.
+
+- **Root cause**: The frontend assumed the amenity service accepted `locality_id` filtering; the actual service API contract was not verified against `main.py` before implementing the hook.
+- **Detection method**: Code audit comparing `useApi.ts` fetch URLs against each microservice's actual FastAPI route definitions.
+- **Resolution**: Removed the unsupported `locality_id` query parameter from the fetch URL. Call now hits `/amenities` without parameters.
+- **Time to resolution**: Immediate once audit was performed
+- **Preventative action**:
+  1. Generate an OpenAPI spec from each microservice and validate `useApi.ts` hook URLs against the spec in CI (using a schema diff tool or contract testing)
+  2. Log the actual HTTP status code in the `useApi.ts` catch blocks so 422 errors are distinguishable from network failures in the browser console

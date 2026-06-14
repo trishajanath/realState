@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react';
-import { motion } from 'framer-motion';
 
 interface TabsContextProps {
   value: string;
@@ -19,54 +18,59 @@ export const Tabs: React.FC<{
   const isControlled = controlledValue !== undefined;
   const activeValue = isControlled ? controlledValue : localValue;
 
-  const handleValueChange = (val: string) => {
+  const handleChange = (val: string) => {
     if (!isControlled) setLocalValue(val);
-    if (onValueChange) onValueChange(val);
+    onValueChange?.(val);
   };
 
   return (
-    <TabsContext.Provider value={{ value: activeValue, onValueChange: handleValueChange }}>
+    <TabsContext.Provider value={{ value: activeValue, onValueChange: handleChange }}>
       <div className={`w-full ${className}`}>{children}</div>
     </TabsContext.Provider>
   );
 };
 
-export const TabsList: React.FC<{ children: React.ReactNode; className?: string }> = ({
+export const TabsList: React.FC<{ children: React.ReactNode; className?: string; style?: React.CSSProperties }> = ({
   children,
-  className = ''
-}) => {
-  return (
-    <div className={`inline-flex items-center justify-center rounded-xl bg-slate-100 p-1 text-slate-500 ${className}`}>
-      {children}
-    </div>
-  );
-};
+  className = '',
+  style,
+}) => (
+  <div
+    className={`flex gap-0 ${className}`}
+    style={{ borderBottom: '1px solid #1F1F1F', ...style }}
+  >
+    {children}
+  </div>
+);
 
 export const TabsTrigger: React.FC<{ value: string; children: React.ReactNode; className?: string }> = ({
   value,
   children,
-  className = ''
+  className = '',
 }) => {
   const ctx = useContext(TabsContext);
   if (!ctx) throw new Error('TabsTrigger must be used within Tabs');
-  const isActive = ctx.value === value;
+  const active = ctx.value === value;
 
   return (
     <button
       type="button"
       onClick={() => ctx.onValueChange(value)}
-      className={`relative rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${
-        isActive ? 'text-slate-950 font-bold' : 'text-slate-500 hover:text-slate-900'
-      } ${className}`}
+      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer ${className}`}
+      style={{
+        color: active ? '#FFFFFF' : '#71717A',
+        borderBottom: active ? '1px solid #FFFFFF' : '1px solid transparent',
+        marginBottom: '-1px',
+        backgroundColor: 'transparent',
+      }}
+      onMouseEnter={(e) => {
+        if (!active) (e.currentTarget as HTMLElement).style.color = '#A1A1AA';
+      }}
+      onMouseLeave={(e) => {
+        if (!active) (e.currentTarget as HTMLElement).style.color = '#71717A';
+      }}
     >
-      {isActive && (
-        <motion.div
-          layoutId="activeTabIndicator"
-          className="absolute inset-0 rounded-lg bg-white shadow-sm"
-          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-        />
-      )}
-      <span className="relative z-10">{children}</span>
+      {children}
     </button>
   );
 };
@@ -74,15 +78,10 @@ export const TabsTrigger: React.FC<{ value: string; children: React.ReactNode; c
 export const TabsContent: React.FC<{ value: string; children: React.ReactNode; className?: string }> = ({
   value,
   children,
-  className = ''
+  className = '',
 }) => {
   const ctx = useContext(TabsContext);
   if (!ctx) throw new Error('TabsContent must be used within Tabs');
   if (ctx.value !== value) return null;
-
-  return (
-    <div className={`mt-2 focus-visible:outline-none ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`mt-6 ${className}`}>{children}</div>;
 };

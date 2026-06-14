@@ -1,240 +1,303 @@
 import React, { useState } from 'react';
 import { useLocalities } from '../../hooks/useApi';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/Tabs';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../../components/ui/Table';
-import { Badge } from '../../components/ui/Badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
-import { LayoutDashboard, TrendingUp, Percent, Landmark, Activity, Calendar, MapPin } from 'lucide-react';
 import { mockScores, mockMetrics } from '../../services/mockData';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, CartesianGrid, Legend,
+} from 'recharts';
+import { TrendingUp, Percent, Landmark, Activity, MapPin, Calendar } from 'lucide-react';
+
+type TabKey = 'trends' | 'yields' | 'infra' | 'rankings';
+
+const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
+  { key: 'trends', label: 'Price Trends', icon: TrendingUp },
+  { key: 'yields', label: 'Yield Matrix', icon: Percent },
+  { key: 'infra', label: 'Infrastructure', icon: Landmark },
+  { key: 'rankings', label: 'Rankings', icon: Activity },
+];
+
+const tooltipStyle = {
+  background: '#0A0A0A',
+  color: '#FFFFFF',
+  borderRadius: '8px',
+  border: '1px solid #2A2A2A',
+  fontSize: '12px',
+};
 
 export const AnalyticsPage: React.FC = () => {
   const { data: localities } = useLocalities();
-  const [activeBoardTab, setActiveBoardTab] = useState<'trends' | 'yields' | 'infra' | 'rankings'>('trends');
+  const [activeTab, setActiveTab] = useState<TabKey>('trends');
 
-  // Multi-locality price trend history
   const priceTrendsData = [
     { year: '2023', Saravanampatti: 3500, Peelamedu: 5500, RSPuram: 8200, Kalapatti: 3400 },
     { year: '2024', Saravanampatti: 3850, Peelamedu: 6050, RSPuram: 8850, Kalapatti: 3750 },
     { year: '2025', Saravanampatti: 4200, Peelamedu: 6480, RSPuram: 9380, Kalapatti: 4050 },
-    { year: '2026', Saravanampatti: 4500, Peelamedu: 6800, RSPuram: 9800, Kalapatti: 4300 }
+    { year: '2026', Saravanampatti: 4500, Peelamedu: 6800, RSPuram: 9800, Kalapatti: 4300 },
   ];
 
-  // Rental yield comparisons
-  const yieldComparisonData = localities?.map(l => {
-    const metrics = mockMetrics[l.id] || { rental_yield_estimate: 3.5 };
-    return {
-      name: l.name,
-      yield: metrics.rental_yield_estimate || 3.5
-    };
+  const yieldData = localities?.map((l) => {
+    const m = mockMetrics[l.id] || { rental_yield_estimate: 3.5 };
+    return { name: l.name, yield: m.rental_yield_estimate || 3.5 };
   }) || [];
 
-  // Locality rankings compiled data
-  const rankingTableData = localities?.map(l => {
-    const scores = mockScores[l.id] || { investment_score: 75, overall_livability_score: 70, connectivity_score: 70 };
-    const metrics = mockMetrics[l.id] || { listing_velocity: 6.0, avg_price_per_sqft: 4000 };
-    const ratingSafety = scores.healthcare_score ? (scores.healthcare_score + (scores.education_score || 70)) / 2 : 75;
+  const rankingData = localities
+    ?.map((l) => {
+      const s = mockScores[l.id] || { investment_score: 75, overall_livability_score: 70, connectivity_score: 70 };
+      const m = mockMetrics[l.id] || { avg_price_per_sqft: 4000 };
+      const safety = s.healthcare_score ? (s.healthcare_score + (s.education_score || 70)) / 2 : 75;
+      return {
+        id: l.id,
+        name: l.name,
+        invest: s.investment_score || 75,
+        safety,
+        connect: s.connectivity_score || 70,
+        livability: s.overall_livability_score || 70,
+        price: m.avg_price_per_sqft || 4200,
+      };
+    })
+    .sort((a, b) => b.invest - a.invest) || [];
 
-    return {
-      id: l.id,
-      name: l.name,
-      investScore: scores.investment_score || 75.0,
-      safetyScore: ratingSafety,
-      connectScore: scores.connectivity_score || 70.0,
-      livability: scores.overall_livability_score || 70.0,
-      velocity: metrics.listing_velocity || 6.5,
-      price: metrics.avg_price_per_sqft || 4200
-    };
-  }).sort((a, b) => b.investScore - a.investScore) || [];
+  const infraItems = [
+    { title: 'Avinashi Road Flyover', phase: 'Phase 2 Completion', date: 'Q4 2026', status: 'In Progress', impact: 'Reduces peak travel by 35%, improves Peelamedu/Hopes College corridors.' },
+    { title: 'Coimbatore Metro Line 1', phase: 'Zoning Approvals', date: 'Q2 2027', status: 'Approved', impact: 'Kalapatti–Saravanampatti link; +12–15% sqft near stations.' },
+    { title: 'CHIL SEZ Corridor Expansion', phase: 'Development Kickoff', date: 'Q1 2027', status: 'Planning', impact: '40,000 new seats; accelerates Saravanampatti rental velocity.' },
+    { title: 'DB Road Pedestrian Plaza', phase: 'Phase 1', date: 'Completed', status: 'Completed', impact: 'Improved RS Puram lifestyle scores and commercial metrics.' },
+  ];
 
-  // Infrastructure timeline markers
-  const infraTimeline = [
-    { title: 'Avinashi Road Flyover Project', phase: 'Phase 2 Completion', date: 'Q4 2026', impact: 'Directly improves connectivity ratings of Peelamedu and Hopes College corridors by reducing peak hour travel duration by 35%.', status: 'In Progress', color: 'bg-blue-500' },
-    { title: 'Coimbatore Metro Line Phase 1', phase: 'Zoning Approvals', date: 'Q2 2027', impact: 'Proposed line connects Kalapatti and Saravanampatti peripheral sectors. Projected to yield a 12-15% bump in price-per-sqft margins near stations.', status: 'Approved', color: 'bg-emerald-500' },
-    { title: 'CHIL SEZ IT Park Corridor Expansion', phase: 'Development Kickoff', date: 'Q1 2027', impact: 'Addition of 40,000 corporate seats. Will accelerate rental demand velocity in Saravanampatti sector.', status: 'Planning', color: 'bg-amber-500' },
-    { title: 'DB Road Pedestrian Plaza Expansion', phase: 'Phase 1 Launch', date: 'Completed', impact: 'Upgraded pedestrian zones and lifestyle scores in RS Puram commercial avenues.', status: 'Completed', color: 'bg-slate-500' }
+  const summaryStats = [
+    { label: 'City Avg Price', value: '₹6,350/sqft', note: '+5.4% vs prev year' },
+    { label: 'Rental Index Avg', value: '3.78%', note: 'Baseline: 3.5%' },
+    { label: 'Appreciation Grade', value: 'A−', note: 'High liquidity' },
+    { label: 'Active Inventory', value: '715 units', note: '7 active sectors' },
   ];
 
   return (
-    <div className="flex-grow flex flex-col bg-slate-900 text-slate-100 p-6 md:p-10 font-mono">
-      
-      {/* Dashboard Top bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-5 w-5 text-blue-500" />
-            <h1 className="text-xl md:text-2xl font-bold font-display text-white tracking-tight">Coimbatore Real Estate Intelligence Console</h1>
+    <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold" style={{ color: '#FFFFFF', letterSpacing: '-0.03em' }}>
+          Analytics
+        </h1>
+        <p className="text-sm mt-1" style={{ color: '#71717A' }}>
+          Comparative price indices, yield matrices, and infrastructure timelines
+        </p>
+      </div>
+
+      {/* Summary metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+        {summaryStats.map((s) => (
+          <div key={s.label} className="flex flex-col gap-0.5">
+            <span className="text-xs uppercase tracking-wider" style={{ color: '#52525B' }}>{s.label}</span>
+            <span className="text-2xl font-semibold" style={{ color: '#FFFFFF' }}>{s.value}</span>
+            <span className="text-xs" style={{ color: '#71717A' }}>{s.note}</span>
           </div>
-          <p className="text-[10px] text-slate-500 uppercase mt-1">Direct metric indices compiled daily &bull; Active indices cached</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] text-slate-400 font-bold uppercase">Market Feeds Active</span>
-        </div>
+        ))}
       </div>
 
-      {/* Analytics Summary index grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-          <span className="text-[9px] text-slate-500 block uppercase">City Price Avg</span>
-          <span className="text-xl font-bold text-white block mt-1">6,350 INR/sqft</span>
-          <span className="text-[9px] text-emerald-500 flex items-center gap-0.5 mt-1 font-sans">
-            <TrendingUp className="h-3 w-3" /> +5.4% vs prev year
-          </span>
-        </div>
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-          <span className="text-[9px] text-slate-500 block uppercase">Rental Index Average</span>
-          <span className="text-xl font-bold text-white block mt-1">3.78%</span>
-          <span className="text-[9px] text-slate-500 mt-1 block">Municipal standard: 3.5%</span>
-        </div>
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-          <span className="text-[9px] text-slate-500 block uppercase">Appreciation Velocity</span>
-          <span className="text-xl font-bold text-white block mt-1">Grade: A-</span>
-          <span className="text-[9px] text-blue-500 mt-1 block">High liquidity transactions</span>
-        </div>
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-          <span className="text-[9px] text-slate-500 block uppercase">Monitored Inventory</span>
-          <span className="text-xl font-bold text-white block mt-1">715 Units</span>
-          <span className="text-[9px] text-slate-500 mt-1 block">across 7 active sectors</span>
-        </div>
+      {/* Tabs */}
+      <div
+        className="flex gap-0 mb-8"
+        style={{ borderBottom: '1px solid #1F1F1F' }}
+      >
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative"
+              style={{
+                color: active ? '#FFFFFF' : '#71717A',
+                borderBottom: active ? '1px solid #FFFFFF' : '1px solid transparent',
+                marginBottom: '-1px',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) (e.currentTarget as HTMLElement).style.color = '#A1A1AA';
+              }}
+              onMouseLeave={(e) => {
+                if (!active) (e.currentTarget as HTMLElement).style.color = '#71717A';
+              }}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Board layout containing Recharts and tables */}
-      <div className="mt-8">
-        <Tabs defaultValue="trends" value={activeBoardTab} onValueChange={(val: any) => setActiveBoardTab(val)}>
-          <TabsList className="bg-slate-950 border border-slate-800 p-1 rounded-xl flex flex-wrap gap-1 mb-6 w-full justify-start h-auto text-slate-400">
-            <TabsTrigger value="trends" className="flex items-center gap-1.5 text-xs py-2 cursor-pointer rounded-lg hover:text-white">
-              <TrendingUp className="h-4 w-4" />
-              <span>Price History Trends</span>
-            </TabsTrigger>
-            <TabsTrigger value="yields" className="flex items-center gap-1.5 text-xs py-2 cursor-pointer rounded-lg hover:text-white">
-              <Percent className="h-4 w-4" />
-              <span>Rental Yield Matrix</span>
-            </TabsTrigger>
-            <TabsTrigger value="infra" className="flex items-center gap-1.5 text-xs py-2 cursor-pointer rounded-lg hover:text-white">
-              <Landmark className="h-4 w-4" />
-              <span>Infrastructure Projects</span>
-            </TabsTrigger>
-            <TabsTrigger value="rankings" className="flex items-center gap-1.5 text-xs py-2 cursor-pointer rounded-lg hover:text-white">
-              <Activity className="h-4 w-4" />
-              <span>Locality Rankings Board</span>
-            </TabsTrigger>
-          </TabsList>
+      {/* Tab: Price Trends */}
+      {activeTab === 'trends' && (
+        <div>
+          <div className="mb-4">
+            <h2 className="text-sm font-medium" style={{ color: '#A1A1AA' }}>
+              Price appreciation path (INR/sqft) · 4-year view
+            </h2>
+          </div>
+          <div style={{ height: '320px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={priceTrendsData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <CartesianGrid stroke="#111111" strokeDasharray="0" />
+                <XAxis dataKey="year" stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} width={60} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#2A2A2A' }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: '#71717A' }} />
+                <Line type="monotone" dataKey="Saravanampatti" stroke="#FFFFFF" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="Peelamedu" stroke="#A1A1AA" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="RSPuram" stroke="#71717A" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="Kalapatti" stroke="#52525B" strokeWidth={1.5} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
-          {/* Tab Content: Price Trends */}
-          <TabsContent value="trends">
-            <Card className="bg-slate-950 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-xs text-slate-500 uppercase font-mono">Comparative price appreciation path (INR / sqft)</CardTitle>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                  <LineChart data={priceTrendsData}>
-                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                    <XAxis dataKey="year" stroke="#475569" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#475569" fontSize={11} tickLine={false} domain={['dataMin - 1000', 'dataMax + 1000']} />
-                    <Tooltip contentStyle={{ background: '#020617', color: '#fff', borderRadius: '12px', border: '1px solid #1e293b' }} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Line type="monotone" dataKey="Saravanampatti" stroke="#3b82f6" strokeWidth={2} activeDot={{ r: 6 }} />
-                    <Line type="monotone" dataKey="Peelamedu" stroke="#10b981" strokeWidth={2} />
-                    <Line type="monotone" dataKey="RSPuram" stroke="#f59e0b" strokeWidth={2} />
-                    <Line type="monotone" dataKey="Kalapatti" stroke="#a855f7" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
+      {/* Tab: Yields */}
+      {activeTab === 'yields' && (
+        <div>
+          <div className="mb-4">
+            <h2 className="text-sm font-medium" style={{ color: '#A1A1AA' }}>
+              Annualized rental yield (%) by micro-sector
+            </h2>
+          </div>
+          <div style={{ height: '320px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={yieldData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <CartesianGrid stroke="#111111" strokeDasharray="0" vertical={false} />
+                <XAxis dataKey="name" stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#111111' }} />
+                <Bar dataKey="yield" fill="#FFFFFF" radius={[2, 2, 0, 0]} maxBarSize={48} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
-          {/* Tab Content: Yield Analysis */}
-          <TabsContent value="yields">
-            <Card className="bg-slate-950 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-xs text-slate-500 uppercase font-mono">Annualized rental yield percentages across micro-sectors</CardTitle>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                  <BarChart data={yieldComparisonData}>
-                    <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                    <XAxis dataKey="name" stroke="#475569" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#475569" fontSize={11} tickLine={false} />
-                    <Tooltip contentStyle={{ background: '#020617', color: '#fff', borderRadius: '12px', border: '1px solid #1e293b' }} />
-                    <Bar dataKey="yield" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab Content: Infrastructure timelines */}
-          <TabsContent value="infra">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {infraTimeline.map((item, idx) => (
-                <Card key={idx} className="bg-slate-950 border-slate-800">
-                  <CardHeader className="flex flex-row justify-between items-start gap-4 pb-3">
-                    <div>
-                      <h3 className="font-bold text-white text-xs">{item.title}</h3>
-                      <p className="text-[9px] text-slate-500 mt-1 uppercase font-semibold">{item.phase}</p>
-                    </div>
-                    <Badge variant={item.status === 'Completed' ? 'success' : item.status === 'In Progress' ? 'default' : 'secondary'} className="font-mono text-[9px] py-0.5">
-                      {item.status}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-xs text-slate-400 leading-relaxed font-sans">{item.impact}</p>
-                    <div className="flex items-center gap-4 text-[10px] text-slate-500 pt-2 border-t border-slate-900">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        Target: {item.date}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Tab: Infrastructure */}
+      {activeTab === 'infra' && (
+        <div className="space-y-0">
+          {/* Table header */}
+          <div
+            className="grid gap-4 px-0 py-2 text-xs uppercase tracking-wider"
+            style={{
+              gridTemplateColumns: '2fr 160px 100px 80px',
+              color: '#52525B',
+              borderBottom: '1px solid #1F1F1F',
+            }}
+          >
+            <span>Project</span>
+            <span>Phase</span>
+            <span>Target</span>
+            <span>Status</span>
+          </div>
+          {infraItems.map((item, idx) => (
+            <div key={idx}>
+              <div
+                className="grid gap-4 py-4"
+                style={{ gridTemplateColumns: '2fr 160px 100px 80px' }}
+              >
+                <div>
+                  <div className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                    {item.title}
+                  </div>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: '#71717A' }}>
+                    {item.impact}
+                  </p>
+                </div>
+                <span className="text-sm self-start pt-0.5" style={{ color: '#A1A1AA' }}>
+                  {item.phase}
+                </span>
+                <div className="flex items-start gap-1 self-start pt-0.5">
+                  <Calendar className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#52525B' }} />
+                  <span className="text-sm" style={{ color: '#A1A1AA' }}>{item.date}</span>
+                </div>
+                <div className="self-start pt-0.5">
+                  <span
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{
+                      backgroundColor: '#111111',
+                      color: item.status === 'Completed' ? '#FFFFFF' : '#A1A1AA',
+                      border: '1px solid #1F1F1F',
+                    }}
+                  >
+                    {item.status}
+                  </span>
+                </div>
+              </div>
+              {idx < infraItems.length - 1 && (
+                <div style={{ height: '1px', backgroundColor: '#111111' }} />
+              )}
             </div>
-          </TabsContent>
+          ))}
+        </div>
+      )}
 
-          {/* Tab Content: Locality Rankings */}
-          <TabsContent value="rankings">
-            <Card className="bg-slate-950 border-slate-800 overflow-hidden">
-              <Table>
-                <TableHeader className="bg-slate-950 border-b border-slate-800">
-                  <TableRow>
-                    <TableHead className="text-slate-400 font-bold">Rank</TableHead>
-                    <TableHead className="text-slate-400 font-bold">Micro-Sector Name</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-center">Investment Score</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-center">Safety Rating</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-center">Connectivity</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-center">Livability Score</TableHead>
-                    <TableHead className="text-slate-400 font-bold text-right">Avg Sqft Cost</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-800">
-                  {rankingTableData.map((item, idx) => (
-                    <TableRow key={item.id} className="hover:bg-slate-900/40">
-                      <TableCell className="font-bold text-slate-400">{idx + 1}</TableCell>
-                      <TableCell className="font-bold text-white flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 text-slate-500" />
-                        <span>{item.name}</span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="bg-amber-950 text-amber-400 border border-amber-800/40 px-2 py-0.5 rounded text-[10px] font-bold">
-                          {item.investScore.toFixed(1)}%
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center text-slate-300">{item.safetyScore.toFixed(1)}%</TableCell>
-                      <TableCell className="text-center text-slate-300">{item.connectScore.toFixed(1)}%</TableCell>
-                      <TableCell className="text-center text-slate-300 font-bold">{item.livability.toFixed(1)}%</TableCell>
-                      <TableCell className="text-right font-bold text-blue-400">{item.price.toLocaleString()} INR</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+      {/* Tab: Rankings */}
+      {activeTab === 'rankings' && (
+        <div>
+          <div
+            className="grid gap-4 py-2 text-xs uppercase tracking-wider"
+            style={{
+              gridTemplateColumns: '24px 1fr 100px 100px 100px 100px 120px',
+              color: '#52525B',
+              borderBottom: '1px solid #1F1F1F',
+            }}
+          >
+            <span>#</span>
+            <span>Locality</span>
+            <span>Investment</span>
+            <span>Safety</span>
+            <span>Connectivity</span>
+            <span>Livability</span>
+            <span className="text-right">Avg Price</span>
+          </div>
 
+          {rankingData.map((item, idx) => (
+            <div key={item.id}>
+              <div
+                className="grid gap-4 py-3 transition-colors duration-150 cursor-default"
+                style={{
+                  gridTemplateColumns: '24px 1fr 100px 100px 100px 100px 120px',
+                  borderBottom: idx < rankingData.length - 1 ? '1px solid #111111' : 'none',
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.backgroundColor = '#0A0A0A')
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')
+                }
+              >
+                <span className="text-xs" style={{ color: '#52525B' }}>
+                  {idx + 1}
+                </span>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#52525B' }} />
+                  <span className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                    {item.name}
+                  </span>
+                </div>
+                <span className="text-sm font-semibold" style={{ color: '#FFFFFF' }}>
+                  {item.invest.toFixed(1)}%
+                </span>
+                <span className="text-sm" style={{ color: '#A1A1AA' }}>
+                  {item.safety.toFixed(1)}%
+                </span>
+                <span className="text-sm" style={{ color: '#A1A1AA' }}>
+                  {item.connect.toFixed(1)}%
+                </span>
+                <span className="text-sm" style={{ color: '#A1A1AA' }}>
+                  {item.livability.toFixed(1)}%
+                </span>
+                <span className="text-sm font-medium text-right" style={{ color: '#FFFFFF' }}>
+                  ₹{item.price.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

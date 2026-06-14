@@ -7,37 +7,38 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isLoading?: boolean;
 }
 
+const variants: Record<string, React.CSSProperties> = {
+  default: { backgroundColor: '#FFFFFF', color: '#000000', border: 'none' },
+  outline: { backgroundColor: 'transparent', color: '#FFFFFF', border: '1px solid #2A2A2A' },
+  ghost: { backgroundColor: 'transparent', color: '#A1A1AA', border: 'none' },
+  link: { backgroundColor: 'transparent', color: '#FFFFFF', border: 'none', padding: 0, textDecoration: 'underline' },
+  google: { backgroundColor: '#0A0A0A', color: '#FFFFFF', border: '1px solid #2A2A2A' },
+};
+
+const sizes: Record<string, React.CSSProperties> = {
+  sm: { height: '32px', padding: '0 12px', fontSize: '12px', borderRadius: '6px' },
+  default: { height: '40px', padding: '0 16px', fontSize: '14px', borderRadius: '8px' },
+  lg: { height: '44px', padding: '0 24px', fontSize: '14px', borderRadius: '8px' },
+  icon: { height: '40px', width: '40px', padding: 0, fontSize: '14px', borderRadius: '8px' },
+};
+
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className = '', variant = 'default', size = 'default', isLoading = false, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center rounded-xl text-xs font-semibold font-sans transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/40 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] cursor-pointer';
-    
-    const variants = {
-      default: 'bg-slate-900 text-white hover:bg-slate-800 shadow-sm border border-slate-900/10',
-      outline: 'border border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm',
-      ghost: 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-      link: 'text-blue-600 underline-offset-4 hover:underline p-0 bg-transparent active:scale-100',
-      google: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm relative pl-10 pr-4'
-    };
-
-    const sizes = {
-      sm: 'h-9 px-3 text-[11px] rounded-lg',
-      default: 'h-11 px-4 py-2.5',
-      lg: 'h-12 px-6 rounded-2xl text-sm',
-      icon: 'h-11 w-11'
-    };
-
-    return (
-      <button
-        ref={ref}
-        disabled={disabled || isLoading}
-        className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-        {...props}
-      >
-        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />}
-        {children}
-      </button>
-    );
-  }
+  ({ className = '', variant = 'default', size = 'default', isLoading = false, children, disabled, style, ...props }, ref) => (
+    <button
+      ref={ref}
+      disabled={disabled || isLoading}
+      className={`inline-flex items-center justify-center font-medium transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:pointer-events-none ${className}`}
+      style={{
+        ...variants[variant],
+        ...sizes[size],
+        ...style,
+      }}
+      {...props}
+    >
+      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {children}
+    </button>
+  )
 );
 
 Button.displayName = 'Button';

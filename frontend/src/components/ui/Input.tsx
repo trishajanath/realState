@@ -5,18 +5,31 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className = '', type = 'text', error = false, ...props }, ref) => {
-    return (
-      <input
-        ref={ref}
-        type={type}
-        className={`flex w-full rounded-xl border ${
-          error ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-slate-200 focus-visible:ring-blue-600/20'
-        } bg-white px-3.5 py-2.5 text-xs text-slate-900 font-sans shadow-sm transition-all file:border-0 file:bg-transparent file:text-xs file:font-medium placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-        {...props}
-      />
-    );
-  }
+  ({ className = '', type = 'text', error = false, style, ...props }, ref) => (
+    <input
+      ref={ref}
+      type={type}
+      className={`flex w-full text-sm transition-colors outline-none placeholder:text-[#52525B] disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      style={{
+        height: '40px',
+        padding: '0 12px',
+        backgroundColor: '#0A0A0A',
+        border: `1px solid ${error ? '#71717A' : '#2A2A2A'}`,
+        borderRadius: '8px',
+        color: '#FFFFFF',
+        ...style,
+      }}
+      onFocus={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = '#3F3F46';
+        props.onFocus?.(e as any);
+      }}
+      onBlur={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = error ? '#71717A' : '#2A2A2A';
+        props.onBlur?.(e as any);
+      }}
+      {...props}
+    />
+  )
 );
 
 Input.displayName = 'Input';

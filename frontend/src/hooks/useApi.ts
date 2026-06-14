@@ -131,8 +131,7 @@ export function useAmenities(localityId: string) {
     queryKey: ['amenities', localityId],
     queryFn: async () => {
       try {
-        // Query radial nearby from target coordinates if map centroid is available
-        const res = await fetch(getUrl('amenities', `/amenities?locality_id=${localityId}`));
+        const res = await fetch(getUrl('amenities', `/amenities`));
         if (!res.ok) throw new Error();
         return await res.json();
       } catch (e) {

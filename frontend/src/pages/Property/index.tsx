@@ -2,392 +2,303 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePropertyDetails, useLocalities } from '../../hooks/useApi';
 import { useCompareStore } from '../../store/useCompareStore';
-import { useMapFilterStore } from '../../store/useMapFilterStore';
 import { MapView } from '../../components/shared/MapView';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/Dialog';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { 
-  Building, Maximize, Sparkles, MapPin, 
-  ArrowLeftRight, Heart, ShieldAlert, Share2, PhoneCall, Calendar
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Building2, MapPin, ArrowLeftRight, Share2, PhoneCall, AlertTriangle, ChevronRight } from 'lucide-react';
+
+const tooltipStyle = {
+  background: '#0A0A0A',
+  color: '#FFFFFF',
+  borderRadius: '8px',
+  border: '1px solid #2A2A2A',
+  fontSize: '12px',
+};
 
 export const PropertyPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const propertyId = id || '';
-
-  const { data: property } = usePropertyDetails(propertyId);
+  const { data: property } = usePropertyDetails(id || '');
   const { data: localities } = useLocalities();
-  const store = useMapFilterStore();
-
   const { addId, removeId, isCompared } = useCompareStore();
-  const [isSaved, setIsSaved] = useState(false);
+
   const [shareCopied, setShareCopied] = useState(false);
   const [contactSubmitted, setContactSubmitted] = useState(false);
 
   if (!property) {
     return (
-      <div className="flex-grow flex items-center justify-center p-12 text-slate-400 text-xs font-mono">
-        Loading property listing intelligence profile...
+      <div className="flex-1 flex items-center justify-center p-12 text-sm" style={{ color: '#52525B' }}>
+        Loading property profile...
       </div>
     );
   }
 
   const compared = isCompared(property.id);
-  const locality = localities?.find(l => l.id === property.locality_id);
+  const locality = localities?.find((l) => l.id === property.locality_id);
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `${(price / 10000000).toFixed(2)} Cr`;
-    }
-    return `${(price / 100000).toFixed(1)} L`;
-  };
+  const formatPrice = (p: number) =>
+    p >= 10000000 ? `₹${(p / 10000000).toFixed(2)} Cr` : `₹${(p / 100000).toFixed(1)} L`;
 
-  const handleCompareClick = () => {
-    if (compared) {
-      removeId(property.id);
-    } else {
-      addId(property.id);
-    }
-  };
-
-  const handleShareClick = () => {
+  const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 2000);
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setContactSubmitted(true);
-  };
-
-  // Mock price trend history
+  // unused divider var removed
   const trendData = [
     { year: '2023', val: property.price * 0.88 },
     { year: '2024', val: property.price * 0.93 },
     { year: '2025', val: property.price * 0.97 },
-    { year: '2026', val: property.price }
+    { year: '2026', val: property.price },
   ];
 
   const ratingGrade = property.ai_investment_rating?.split('|')[0]?.replace('Grade:', '').trim() || 'B';
   const ratingAnalysis = property.ai_investment_rating?.split('|')[1]?.replace('Analysis:', '').trim() || '';
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 w-full flex-grow flex flex-col gap-8">
-      
-      {/* Breadcrumb paths */}
-      <div className="text-[10px] font-mono tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
-        <Link to="/" className="hover:underline">Coimbatore</Link>
-        <span>/</span>
-        <Link to="/map" className="hover:underline">Properties</Link>
-        <span>/</span>
-        <span className="text-slate-600">{property.title}</span>
+    <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
+
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-xs mb-6" style={{ color: '#52525B' }}>
+        <Link to="/" style={{ color: '#71717A' }} onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#FFFFFF')} onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#71717A')}>Overview</Link>
+        <ChevronRight className="w-3 h-3" />
+        <Link to="/map" style={{ color: '#71717A' }} onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#FFFFFF')} onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#71717A')}>Properties</Link>
+        <ChevronRight className="w-3 h-3" />
+        <span style={{ color: '#A1A1AA' }}>{property.title}</span>
       </div>
 
-      {/* Hero Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200/50 pb-6">
+      {/* Title row */}
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
         <div>
-          <h1 className="text-2xl md:text-4xl font-extrabold font-display text-slate-900 leading-tight">
+          <h1 className="text-2xl font-bold" style={{ color: '#FFFFFF', letterSpacing: '-0.03em' }}>
             {property.title}
           </h1>
-          <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5 text-slate-400" />
-            <span>{locality?.name || 'Coimbatore'}, Coimbatore, Tamil Nadu</span>
-          </p>
+          <div className="flex items-center gap-1.5 mt-1.5 text-sm" style={{ color: '#71717A' }}>
+            <MapPin className="w-3.5 h-3.5" />
+            {locality?.name || 'Coimbatore'}, Tamil Nadu
+          </div>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
-            onClick={handleCompareClick}
-            className={`py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
-              compared
-                ? 'bg-slate-900 border-slate-900 text-white shadow-md'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
+            onClick={() => compared ? removeId(property.id) : addId(property.id)}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded transition-colors"
+            style={{
+              backgroundColor: compared ? '#FFFFFF' : '#111111',
+              color: compared ? '#000000' : '#A1A1AA',
+              border: '1px solid #2A2A2A',
+            }}
           >
-            <ArrowLeftRight className="h-4 w-4" />
-            <span>{compared ? 'Added to Compare' : 'Compare Specifications'}</span>
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            {compared ? 'Added' : 'Compare'}
           </button>
-          <button 
-            onClick={() => setIsSaved(!isSaved)}
-            className={`border p-2.5 rounded-xl transition-all shadow-sm cursor-pointer ${
-              isSaved ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded transition-colors"
+            style={{ backgroundColor: '#111111', color: '#A1A1AA', border: '1px solid #2A2A2A' }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#FFFFFF')}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#A1A1AA')}
           >
-            <Heart className="h-4 w-4 fill-current" />
+            <Share2 className="w-3.5 h-3.5" />
+            {shareCopied ? 'Copied' : 'Share'}
           </button>
         </div>
       </div>
 
-      {/* Large visual gallery (React Bits image reveal layout) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          whileHover={{ scale: 1.01 }}
-          className="md:col-span-2 aspect-[16/10] bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
-        >
-          {property.images && property.images.length > 0 ? (
-            <img 
-              src={property.images[0]} 
-              alt={`${property.title} - Main Image`} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          ) : store.mapsApiKey && property.latitude && property.longitude ? (
-            <img 
-              src={`https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${property.latitude},${property.longitude}&fov=90&heading=235&pitch=10&key=${store.mapsApiKey}`}
-              alt={`Live street view of ${property.title}`}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+      {/* Images */}
+      <div className="grid grid-cols-3 gap-3 mb-8" style={{ height: '320px' }}>
+        <div className="col-span-2 rounded overflow-hidden" style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}>
+          {property.images?.[0] ? (
+            <img src={property.images[0]} alt={property.title} className="w-full h-full object-cover" />
           ) : (
-            <Building className="h-16 w-16 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
+            <div className="w-full h-full flex items-center justify-center" style={{ color: '#3F3F46' }}>
+              <Building2 className="w-12 h-12" />
+            </div>
           )}
-          <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
-          <span className="absolute bottom-4 left-4 bg-slate-900/80 text-white text-[10px] font-mono px-3 py-1.5 rounded-xl backdrop-blur">
-            {property.images && property.images.length > 0 ? "PRIMARY ACQUISITION PHOTO" : "MAIN STREET VIEW Centroid"}
-          </span>
-        </motion.div>
-        <div className="grid grid-rows-2 gap-4">
-          <motion.div 
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
-            whileHover={{ scale: 1.02 }}
-            className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
-          >
-            {property.images && property.images.length > 1 ? (
-              <img 
-                src={property.images[1]} 
-                alt={`${property.title} - Interior`} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            ) : (
-              <Building className="h-10 w-10 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
-            )}
-            <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
-            <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[9px] font-mono px-2 py-1 rounded-lg backdrop-blur">INTERIOR VIEW</span>
-          </motion.div>
-          <motion.div 
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-            whileHover={{ scale: 1.02 }}
-            className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner overflow-hidden cursor-zoom-in group relative"
-          >
-            {property.images && property.images.length > 2 ? (
-              <img 
-                src={property.images[2]} 
-                alt={`${property.title} - Communal`} 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            ) : (
-              <Building className="h-10 w-10 stroke-[1.2] group-hover:scale-110 transition-transform duration-300" />
-            )}
-            <div className="absolute inset-0 bg-slate-950/10 group-hover:bg-slate-950/0 transition-colors" />
-            <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white text-[9px] font-mono px-2 py-1 rounded-lg backdrop-blur">COMMUNAL HUD VIEW</span>
-          </motion.div>
+        </div>
+        <div className="grid grid-rows-2 gap-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="rounded overflow-hidden" style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}>
+              {property.images?.[i] ? (
+                <img src={property.images[i]} alt={`${property.title} ${i}`} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center" style={{ color: '#2A2A2A' }}>
+                  <Building2 className="w-8 h-8" />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Page Content layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-4">
-        
-        {/* Main Content Panels */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Key metrics header (shadcn Card) */}
-          <Card>
-            <CardContent className="grid grid-cols-3 gap-4 text-center p-6">
-              <div>
-                <span className="text-[10px] text-slate-400 font-mono block uppercase">Property Type</span>
-                <span className="text-sm font-semibold text-slate-800 mt-1 block">{property.property_type}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-mono block uppercase">Built Up Area</span>
-                <span className="text-sm font-semibold text-slate-800 mt-1 block flex items-center justify-center gap-1.5">
-                  <Maximize className="h-4 w-4 text-slate-400" />
-                  <span>{property.area_sqft} sqft</span>
-                </span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-400 font-mono block uppercase">Configuration</span>
-                <span className="text-sm font-semibold text-slate-800 mt-1 block">
-                  {property.bedrooms ? `${property.bedrooms} BHK` : '-'} / {property.bathrooms ? `${property.bathrooms} Bath` : '-'}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Content grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main */}
+        <div className="lg:col-span-2">
 
-          {/* AI Deal Review */}
-          <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-100 p-6 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-2 text-blue-900">
-              <Sparkles className="h-5 w-5 text-blue-600 animate-pulse" />
-              <h3 className="font-bold text-xs uppercase font-mono tracking-wider">Gemini Deal Evaluation Analysis</h3>
-            </div>
-            
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="bg-blue-600 text-white text-[10px] font-mono px-2.5 py-0.5 rounded-lg font-bold uppercase">
-                {ratingGrade}
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono font-bold uppercase">COIMBATORE MARKET STABILITY</span>
-            </div>
-
-            <p className="text-xs text-slate-700 mt-3 leading-relaxed font-semibold font-sans">
-              {ratingAnalysis}
-            </p>
-            
-            <p className="text-xs text-slate-500 mt-4 leading-relaxed border-t border-blue-100 pt-3 font-sans">
-              {property.ai_description}
-            </p>
+          {/* Spec strip */}
+          <div className="grid grid-cols-3 gap-0 mb-8" style={{ border: '1px solid #1F1F1F', borderRadius: '8px', overflow: 'hidden' }}>
+            {[
+              { label: 'Type', value: property.property_type, border: true },
+              { label: 'Built-up Area', value: `${property.area_sqft} sqft`, border: true },
+              { label: 'Configuration', value: `${property.bedrooms ?? '-'} BHK / ${property.bathrooms ?? '-'} Bath`, border: false },
+            ].map((spec) => (
+              <div
+                key={spec.label}
+                className="p-4"
+                style={{ borderRight: spec.border ? '1px solid #1F1F1F' : 'none', backgroundColor: '#0A0A0A' }}
+              >
+                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#52525B' }}>{spec.label}</div>
+                <div className="text-sm font-medium" style={{ color: '#FFFFFF' }}>{spec.value}</div>
+              </div>
+            ))}
           </div>
 
-          {/* Price history chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Unit Acquisition History</CardTitle>
-            </CardHeader>
-            <CardContent className="h-48">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <AreaChart data={trendData}>
+          {/* AI Analysis */}
+          <div className="p-5 rounded mb-8" style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#1C1C1C', color: '#FFFFFF', border: '1px solid #2A2A2A' }}>
+                Grade {ratingGrade}
+              </span>
+              <span className="text-xs uppercase tracking-wider" style={{ color: '#52525B' }}>AI Investment Analysis</span>
+            </div>
+            {ratingAnalysis && (
+              <p className="text-sm font-medium mb-3 leading-relaxed" style={{ color: '#FFFFFF' }}>{ratingAnalysis}</p>
+            )}
+            <p className="text-sm leading-relaxed" style={{ color: '#71717A' }}>{property.ai_description}</p>
+          </div>
+
+          {/* Price trend */}
+          <div className="mb-8">
+            <h3 className="text-xs uppercase tracking-wider mb-4" style={{ color: '#52525B' }}>Price History</h3>
+            <div style={{ height: '180px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                   <defs>
-                    <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.08} />
+                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="year" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`} />
-                  <Tooltip 
-                    contentStyle={{ background: '#0f172a', color: '#fff', borderRadius: '12px', border: 'none' }}
-                    formatter={(val: any) => [`${formatPrice(val)}`, 'Price']}
-                  />
-                  <Area type="monotone" dataKey="val" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorVal)" />
+                  <XAxis dataKey="year" stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 100000).toFixed(0)}L`} width={48} />
+                  <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [formatPrice(v), 'Price']} cursor={{ stroke: '#2A2A2A' }} />
+                  <Area type="monotone" dataKey="val" stroke="#FFFFFF" strokeWidth={1.5} fill="url(#priceGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Interactive proximity map */}
-          <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-            <h3 className="text-xs font-semibold text-slate-800 uppercase font-mono tracking-wider mb-4">Local Geospatial Context</h3>
-            <MapView propertyId={property.id} localityId={property.locality_id || ''} height="h-64" />
-          </div>
-
-        </div>
-
-        {/* Right side Sticky Sidebar */}
-        <div className="space-y-6 lg:sticky lg:top-[88px] h-fit">
-          
-          <Card>
-            <CardContent className="p-6 space-y-6">
-              <div>
-                <span className="text-[10px] text-slate-400 font-mono block uppercase">Transaction Valuation</span>
-                <span className="text-3xl font-extrabold font-display text-slate-900 block mt-1">
-                  {formatPrice(property.price)}
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono mt-1 block">
-                  ~ {Math.round(property.price / property.area_sqft).toLocaleString()} INR/sqft
-                </span>
-              </div>
-
-              <div className="space-y-3 text-xs font-semibold text-slate-700">
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                  <span className="text-slate-400">Builder/Developer</span>
-                  <span className="font-semibold text-slate-900">Casagrand Structures</span>
-                </div>
-                <div className="flex justify-between items-center py-2.5 border-b border-slate-100">
-                  <span className="text-slate-400">Possession</span>
-                  <span className="font-semibold text-slate-900 flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                    Dec 2027
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2.5">
-                  <span className="text-slate-400">Inventory Status</span>
-                  <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-100 text-[10px] uppercase font-bold tracking-wider">
-                    Active
-                  </span>
-                </div>
-              </div>
-
-              {/* Action buttons inside ScrollArea-like drawer */}
-              <div className="flex flex-col gap-2 pt-2">
-                <button
-                  onClick={handleCompareClick}
-                  className={`w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
-                    compared
-                      ? 'bg-slate-900 border-slate-900 text-white'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                  <span>{compared ? 'Added to Compare' : 'Compare Specifications'}</span>
-                </button>
-
-                <button
-                  onClick={handleShareClick}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Share2 className="h-3.5 w-3.5 text-slate-500" />
-                  <span>{shareCopied ? 'Link Copied!' : 'Share Intelligence Link'}</span>
-                </button>
-
-                {/* Dialog triggered Contact Form */}
-                <Dialog>
-                  <DialogTrigger>
-                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-blue-500/10">
-                      <PhoneCall className="h-3.5 w-3.5" />
-                      <span>Contact Advisory Desk</span>
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Request Expert Advisory Call</DialogTitle>
-                      <DialogDescription>
-                        Get detail-oriented structural specs and yield projections from our regional real estate desk.
-                      </DialogDescription>
-                    </DialogHeader>
-                    {contactSubmitted ? (
-                      <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl text-center mt-4">
-                        Advisory ticket submitted! An intelligence consultant will dial within 30 minutes.
-                      </div>
-                    ) : (
-                      <form onSubmit={handleContactSubmit} className="space-y-4 mt-4 text-xs">
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-[10px] font-bold font-mono text-slate-400 uppercase">Consultant Name</label>
-                          <input required type="text" placeholder="Trisha Janath" className="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600/20 focus:border-blue-600" />
-                        </div>
-                        <div className="flex flex-col space-y-1">
-                          <label className="text-[10px] font-bold font-mono text-slate-400 uppercase">Contact Mobile Number</label>
-                          <input required type="tel" placeholder="+91 98765 43210" className="border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600/20 focus:border-blue-600" />
-                        </div>
-                        <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl cursor-pointer">Submit advisory callback ticket</button>
-                      </form>
-                    )}
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Risk warning */}
-          <div className="bg-rose-50/50 border border-rose-100 p-5 rounded-2xl shadow-sm flex gap-3 text-slate-800">
-            <ShieldAlert className="h-5 w-5 text-rose-600 flex-shrink-0" />
-            <div>
-              <h4 className="font-bold text-[10px] font-mono uppercase tracking-wider text-rose-800">Micro-market Risk Checks</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed mt-1 font-sans">
-                Centroid records show minor highway bottleneck alerts during morning hours. Groundwater metrics checked and verified within standards.
-              </p>
             </div>
           </div>
 
+          {/* Map */}
+          <div>
+            <h3 className="text-xs uppercase tracking-wider mb-4" style={{ color: '#52525B' }}>Location</h3>
+            <div className="rounded overflow-hidden" style={{ border: '1px solid #1F1F1F' }}>
+              <MapView propertyId={property.id} localityId={property.locality_id || ''} height="h-64" />
+            </div>
+          </div>
         </div>
 
-      </div>
+        {/* Sidebar */}
+        <div className="space-y-4 lg:sticky lg:top-20 h-fit">
+          <div className="p-5 rounded" style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}>
+            <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#52525B' }}>
+              {property.listing_type === 'Rent' ? 'Monthly Rent' : 'Sale Price'}
+            </div>
+            <div className="text-3xl font-bold mb-1" style={{ color: '#FFFFFF', letterSpacing: '-0.03em' }}>
+              {formatPrice(property.price)}
+            </div>
+            <div className="text-xs mb-5" style={{ color: '#71717A' }}>
+              ≈ ₹{Math.round(property.price / property.area_sqft).toLocaleString()}/sqft
+            </div>
 
+            <div className="space-y-0 mb-5" style={{ borderTop: '1px solid #1F1F1F' }}>
+              {[
+                { label: 'Source', value: property.source },
+                { label: 'Listing Type', value: property.listing_type },
+                { label: 'Status', value: 'Active' },
+              ].map((row) => (
+                <div
+                  key={row.label}
+                  className="flex justify-between py-3 text-sm"
+                  style={{ borderBottom: '1px solid #111111' }}
+                >
+                  <span style={{ color: '#71717A' }}>{row.label}</span>
+                  <span className="font-medium" style={{ color: '#FFFFFF' }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => compared ? removeId(property.id) : addId(property.id)}
+                className="flex items-center justify-center gap-2 w-full h-10 rounded text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: compared ? '#FFFFFF' : '#111111',
+                  color: compared ? '#000000' : '#A1A1AA',
+                  border: '1px solid #2A2A2A',
+                }}
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+                {compared ? 'Remove from Compare' : 'Add to Compare'}
+              </button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    className="flex items-center justify-center gap-2 w-full h-10 rounded text-sm font-medium transition-colors"
+                    style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#D4D4D4')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#FFFFFF')}
+                  >
+                    <PhoneCall className="w-4 h-4" />
+                    Contact Advisory
+                  </button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Request Advisory Call</DialogTitle>
+                    <DialogDescription>Our regional desk will respond within 30 minutes.</DialogDescription>
+                  </DialogHeader>
+                  {contactSubmitted ? (
+                    <div className="p-4 rounded text-sm mt-4 text-center" style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F', color: '#A1A1AA' }}>
+                      Advisory ticket submitted. A consultant will contact you shortly.
+                    </div>
+                  ) : (
+                    <form onSubmit={(e) => { e.preventDefault(); setContactSubmitted(true); }} className="space-y-4 mt-4">
+                      {['Name', 'Phone'].map((field) => (
+                        <div key={field}>
+                          <label className="block text-xs font-medium mb-1.5" style={{ color: '#A1A1AA' }}>{field}</label>
+                          <input
+                            required
+                            type={field === 'Phone' ? 'tel' : 'text'}
+                            placeholder={field === 'Phone' ? '+91 98765 43210' : 'Your name'}
+                            className="w-full h-10 px-3 rounded text-sm outline-none"
+                            style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', color: '#FFFFFF' }}
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="submit"
+                        className="w-full h-10 rounded text-sm font-medium"
+                        style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
+                      >
+                        Submit
+                      </button>
+                    </form>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Risk note */}
+          <div className="flex gap-3 p-4 rounded text-sm" style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}>
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#71717A' }} />
+            <p style={{ color: '#71717A', lineHeight: '1.6' }}>
+              Minor highway bottleneck alerts during morning hours. Groundwater metrics within standards.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
