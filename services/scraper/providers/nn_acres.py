@@ -3,510 +3,249 @@ import re
 import asyncio
 import random
 from urllib.parse import urlparse
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from bs4 import BeautifulSoup
 import httpx
 import structlog
 
 from interfaces import BaseProvider, BaseParser, BaseNormalizer
+from normalizer_base import normalize_common
 
 logger = structlog.get_logger("scraper.99acres")
+
+_SOURCE = "99acres"
 
 
 class NinetyNineAcresProvider(BaseProvider):
     """
-    HTTP client provider for 99acres.com.
-    Configures browser headers to bypass simple bot filters and implements
-    rate limiting, robots.txt compliance, retry logic with exponential backoff,
-    and HTTP 429 Retry-After handling.
+    HTTP provider for 99acres.com with robots.txt compliance,
+    rate limiting, and exponential-backoff retry.
     """
     def __init__(self):
-        super().__init__(source_name="99acres")
+        super().__init__(source_name=_SOURCE)
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9",
             "Referer": "https://www.99acres.com/",
-            "Connection": "keep-alive"
+            "Connection": "keep-alive",
         }
-        self.delay = 1.0  # base delay in seconds
-        self.jitter = 1.5  # randomized jitter range
+        self.delay = 1.0
+        self.jitter = 1.5
         self.max_retries = 3
         self.initial_backoff = 2.0
-        self._robots_cached = None
+        self._robots_text: str | None = None
         self._robots_fetched = False
 
-    async def _is_allowed_by_robots(self, target_url: str) -> bool:
-        """
-        Parses 99acres robots.txt to determine if scraping is disallowed.
-        Caches robots.txt content to avoid redundant calls.
-        """
-        # If it's a mock/test URL, bypass robots.txt fetching
+    async def _is_allowed(self, target_url: str) -> bool:
         if "mock" in target_url.lower() or "sample-listings.in" in target_url.lower():
             return True
 
-        parsed_url = urlparse(target_url)
-        robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
+        parsed = urlparse(target_url)
+        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
 
         if not self._robots_fetched:
             try:
-                logger.info("Fetching robots.txt", url=robots_url)
                 async with httpx.AsyncClient(timeout=5.0) as client:
-                    response = await client.get(robots_url, headers=self.headers)
-                    if response.status_code == 200:
-                        self._robots_cached = response.text
-                    self._robots_fetched = True
+                    resp = await client.get(robots_url, headers=self.headers)
+                    if resp.status_code == 200:
+                        self._robots_text = resp.text
             except Exception as e:
-                logger.warning("Failed to fetch robots.txt, defaulting to cautious crawling", error=str(e))
+                logger.warning("Could not fetch robots.txt", error=str(e))
+            finally:
                 self._robots_fetched = True
 
-        if not self._robots_cached:
-            # cautious crawling allowed
+        if not self._robots_text:
             return True
 
-        # Simple robots.txt rule check for User-Agent: * or User-Agent: NinetyNineAcresProvider
-        path = parsed_url.path
-        lines = self._robots_cached.split("\n")
-        user_agent_applies = False
-        disallowed_paths = []
-
-        for line in lines:
+        path = parsed.path
+        applies = False
+        for line in self._robots_text.splitlines():
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            
-            parts = line.split(":", 1)
-            if len(parts) < 2:
+            if ":" not in line:
                 continue
-            
-            key = parts[0].strip().lower()
-            val = parts[1].strip()
-
+            key, _, val = line.partition(":")
+            key, val = key.strip().lower(), val.strip()
             if key == "user-agent":
-                if val == "*" or "scraper" in val.lower():
-                    user_agent_applies = True
-                else:
-                    user_agent_applies = False
-
-            elif key == "disallow" and user_agent_applies:
-                if val:
-                    disallowed_paths.append(val)
-
-        # Check if target path starts with any disallowed prefix
-        for dpath in disallowed_paths:
-            # Replace robots.txt wildcard patterns with simple regex mapping
-            pattern = dpath.replace("*", ".*")
-            if re.match(f"^{pattern}", path):
-                logger.warning("URL matches robots.txt Disallow rule", url=target_url, disallow_pattern=dpath)
-                return False
-
+                applies = val in ("*",) or "scraper" in val.lower()
+            elif key == "disallow" and applies and val:
+                pattern = val.replace("*", ".*")
+                if re.match(f"^{pattern}", path):
+                    logger.warning("Blocked by robots.txt", url=target_url, rule=val)
+                    return False
         return True
 
     async def fetch_raw(self, target_url: str) -> str:
-        # Check explicit network failure trigger for testing
         if "fail-network" in target_url.lower():
-            raise ConnectionError("Simulated 99acres Network Timeout (HTTP 504)")
+            raise ConnectionError("Simulated 99acres network timeout")
 
-        # Verify robots.txt permission
-        allowed = await self._is_allowed_by_robots(target_url)
-        if not allowed:
-            raise PermissionError(f"Scraping disallowed by robots.txt for URL: {target_url}")
+        if not await self._is_allowed(target_url):
+            raise PermissionError(f"robots.txt disallows scraping: {target_url}")
 
-        # Fallback simulation if running in mock-mode or if domain is mock/test
         if "mock" in target_url.lower() or "sample-listings.in" in target_url.lower():
-            logger.info("Using 99acres simulation fallback", url=target_url)
-            # Add small rate-limiting wait during simulation to prove it works
-            sleep_time = self.delay + random.uniform(0, self.jitter)
-            logger.info(f"Applying rate limit delay of {sleep_time:.2f}s before fetching")
-            await asyncio.sleep(sleep_time)
-            return self._get_simulated_html(target_url)
+            await asyncio.sleep(self.delay + random.uniform(0, self.jitter))
+            return self._simulated_html(target_url)
 
-        # Apply rate limiting delay before request
-        sleep_time = self.delay + random.uniform(0, self.jitter)
-        logger.info(f"Applying rate limit delay of {sleep_time:.2f}s before fetching")
-        await asyncio.sleep(sleep_time)
+        await asyncio.sleep(self.delay + random.uniform(0, self.jitter))
 
-        attempt = 0
-        while attempt < self.max_retries:
-            logger.info("Fetching real 99acres listing url", url=target_url, attempt=attempt + 1)
+        for attempt in range(self.max_retries):
             try:
-                async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                async with httpx.AsyncClient(timeout=12.0, follow_redirects=True) as client:
                     response = await client.get(target_url, headers=self.headers)
-                    
-                    # Respect HTTP 429 Too Many Requests
+
                     if response.status_code == 429:
                         retry_after = response.headers.get("Retry-After")
                         backoff = float(retry_after) if retry_after and retry_after.isdigit() else self.initial_backoff * (2 ** attempt)
-                        logger.warning(f"HTTP 429 encountered. Backing off for {backoff:.2f}s", url=target_url)
+                        logger.warning("HTTP 429, backing off", backoff=backoff)
                         await asyncio.sleep(backoff)
-                        attempt += 1
                         continue
 
-                    # Trigger simulated fallback for Cloudflare/bot challenge screens in execution environment
-                    if response.status_code == 403 or "captcha" in response.text.lower() or "challenge" in response.text.lower():
-                        logger.warning("Blocked by anti-bot checks. Triggering simulated fallback.", status_code=response.status_code)
-                        return self._get_simulated_html(target_url)
+                    if response.status_code in (403,) or "captcha" in response.text.lower():
+                        logger.warning("Blocked by 99acres anti-bot")
+                        return self._simulated_html(target_url)
 
                     response.raise_for_status()
                     return response.text
 
             except httpx.HTTPStatusError as e:
-                status = e.response.status_code
-                if status >= 500 or status == 429:
+                if e.response.status_code >= 500:
                     backoff = self.initial_backoff * (2 ** attempt) + random.uniform(0, 1.0)
-                    logger.warning(f"Transient HTTP error {status}. Retrying in {backoff:.2f}s...", error=str(e))
+                    logger.warning("Server error, retrying", status=e.response.status_code, backoff=backoff)
                     await asyncio.sleep(backoff)
-                    attempt += 1
                 else:
-                    # Non-transient 4xx error: raise immediately
-                    raise e
+                    raise
             except (httpx.RequestError, ConnectionError) as e:
                 backoff = self.initial_backoff * (2 ** attempt) + random.uniform(0, 1.0)
-                logger.warning(f"Transient connection error. Retrying in {backoff:.2f}s...", error=str(e))
+                logger.warning("Connection error, retrying", error=str(e), backoff=backoff)
                 await asyncio.sleep(backoff)
-                attempt += 1
 
-        raise ConnectionError(f"Failed to fetch URL {target_url} after {self.max_retries} attempts.")
+        raise ConnectionError(f"99acres fetch failed after {self.max_retries} attempts: {target_url}")
 
-    def _get_simulated_html(self, target_url: str) -> str:
-        """
-        Returns a rich HTML page simulation resembling a real 99acres listing for Gandhipuram/RS Puram, Coimbatore.
-        """
-        # Emulate layout corruption
-        if "corrupt" in target_url.lower():
-            return "<html><body>Corrupt Page Layout without title or details</body></html>"
+    def _simulated_html(self, url: str) -> str:
+        if "corrupt" in url.lower():
+            return "<html><body>Corrupt page</body></html>"
 
-        # Emulate target variables based on URL patterns
-        locality = "RS Puram" if "rs-puram" in target_url.lower() else "Gandhipuram"
-        price = "1.15 Crores" if locality == "RS Puram" else "85 Lakhs"
-        beds = "3"
-        area = "1800"
+        locality = "RS Puram" if "rs-puram" in url.lower() else "Gandhipuram"
+        price_label = "1.15 Crores" if locality == "RS Puram" else "85 Lakhs"
+        price_raw = 11_500_000 if locality == "RS Puram" else 8_500_000
+        beds, area = "3", "1800"
 
-        # Structured schema JSON-LD often found in real listings
         json_ld = {
             "@context": "https://schema.org",
             "@type": "Product",
             "name": f"{beds} BHK Apartment for Sale in {locality}, Coimbatore",
-            "description": f"Beautiful {beds} BHK property in prime location of {locality}, Coimbatore. Size: {area} sqft.",
-            "offers": {
-                "@type": "Offer",
-                "price": "11500000" if locality == "RS Puram" else "8500000",
-                "priceCurrency": "INR"
-            }
+            "description": f"Beautiful {beds} BHK in {locality}. Size: {area} sqft.",
+            "offers": {"@type": "Offer", "price": str(price_raw), "priceCurrency": "INR"},
         }
-
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
+        return f"""<!DOCTYPE html><html><head>
             <title>{beds} BHK Apartment for Sale in {locality}, Coimbatore - 99acres</title>
-            <link rel="canonical" href="{target_url}" />
+            <link rel="canonical" href="{url}" />
             <meta property="og:title" content="{beds} BHK Apartment for Sale in {locality}, Coimbatore" />
-            <meta property="og:description" content="Find this {beds} BHK Flat/Apartment for Sale in {locality}, Coimbatore. Super Area {area} sqft, price Rs {price}." />
-            <meta property="og:url" content="{target_url}" />
-            <meta name="description" content="Buy {beds} BHK property in {locality}. Price: Rs {price}. Area: {area} sqft. Bathrooms: 3." />
-            
-            <script type="application/ld+json">
-            {json.dumps(json_ld)}
-            </script>
-        </head>
-        <body>
-            <div id="app">
-                <h1 class="page_heading">{beds} BHK Apartment for Sale in {locality}, Coimbatore</h1>
-                <div class="property_price">
-                    <span class="value">Rs {price}</span>
-                </div>
-                <div class="property_details">
-                    <div class="detail_item" id="area_val">Super Built-up Area: {area} sq.ft.</div>
-                    <div class="detail_item" id="beds_val">{beds} Bedrooms</div>
-                    <div class="detail_item" id="baths_val">3 Bathrooms</div>
-                    <div class="detail_item" id="locality_val">Locality: {locality}</div>
-                </div>
-                <script>
-                    window.__INITIAL_STATE__ = {{
-                        "propertyDetail": {{
-                            "id": "99A12345",
-                            "title": "{beds} BHK Apartment for Sale in {locality}",
-                            "price": {{
-                                "value": {11500000 if locality == "RS Puram" else 8500000},
-                                "label": "Rs {price}"
-                            }},
-                            "area": {{
-                                "value": {area},
-                                "unit": "sq.ft"
-                            }},
-                            "bedrooms": {beds},
-                            "bathrooms": 3,
-                            "location": {{
-                                "latitude": 11.0183,
-                                "longitude": 76.9558,
-                                "localityName": "{locality}",
-                                "cityName": "Coimbatore"
-                            }}
-                        }}
-                    }};
-                </script>
+            <meta property="og:description" content="{beds} BHK in {locality}. Area {area} sqft, price Rs {price_label}." />
+            <meta property="og:url" content="{url}" />
+            <meta name="description" content="Buy {beds} BHK in {locality}. Price: Rs {price_label}. Area: {area} sqft." />
+            <script type="application/ld+json">{json.dumps(json_ld)}</script>
+        </head><body>
+            <h1 class="page_heading">{beds} BHK Apartment for Sale in {locality}, Coimbatore</h1>
+            <div class="property_price"><span class="value">Rs {price_label}</span></div>
+            <div class="property_details">
+                <div id="area_val">Super Built-up Area: {area} sq.ft.</div>
+                <div id="beds_val">{beds} Bedrooms</div>
+                <div id="baths_val">2 Bathrooms</div>
             </div>
-        </body>
-        </html>
-        """
+            <script>window.__INITIAL_STATE__={{"propertyDetail":{{"id":"99A12345","title":"{beds} BHK Apartment for Sale in {locality}","price":{{"value":{price_raw}}},"area":{{"value":{area}}},"bedrooms":{beds},"bathrooms":2,"location":{{"latitude":11.0183,"longitude":76.9558,"localityName":"{locality}","cityName":"Coimbatore"}}}}}};
+            </script>
+        </body></html>"""
 
 
 class NinetyNineAcresParser(BaseParser):
-    """
-    Resilient DOM parser for 99acres listings.
-    Attempts multiple parsing strategies (JSON-LD, hydration script state, meta tags, DOM classes).
-    """
+    """Multi-strategy DOM parser for 99acres listings."""
+
     def parse_raw(self, raw_data: str) -> Dict[str, Any]:
         soup = BeautifulSoup(raw_data, "html.parser")
-        extracted = {}
+        extracted: Dict[str, Any] = {}
 
-        # Strategy 1: Hydrated window state JSON
-        try:
-            script_tags = soup.find_all("script")
-            for tag in script_tags:
-                if tag.string and "window.__INITIAL_STATE__" in tag.string:
-                    # Extract raw JSON assign
-                    match = re.search(r"window\.__INITIAL_STATE__\s*=\s*(\{.*?\});", tag.string, re.DOTALL)
-                    if match:
-                        state = json.loads(match.group(1))
-                        prop = state.get("propertyDetail", {})
+        # Strategy 1: window.__INITIAL_STATE__ hydration
+        for tag in soup.find_all("script"):
+            if tag.string and "window.__INITIAL_STATE__" in tag.string:
+                match = re.search(r"window\.__INITIAL_STATE__\s*=\s*(\{.*?\});", tag.string, re.DOTALL)
+                if match:
+                    try:
+                        prop = json.loads(match.group(1)).get("propertyDetail", {})
                         if prop:
+                            loc = prop.get("location", {})
                             extracted.update({
                                 "title": prop.get("title"),
-                                "price": prop.get("price", {}).get("value") or prop.get("price", {}).get("label"),
+                                "price": prop.get("price", {}).get("value"),
                                 "area": prop.get("area", {}).get("value"),
                                 "bedrooms": prop.get("bedrooms"),
                                 "bathrooms": prop.get("bathrooms"),
-                                "locality": prop.get("location", {}).get("localityName"),
-                                "latitude": prop.get("location", {}).get("latitude"),
-                                "longitude": prop.get("location", {}).get("longitude"),
-                                "city": prop.get("location", {}).get("cityName"),
+                                "locality": loc.get("localityName"),
+                                "latitude": loc.get("latitude"),
+                                "longitude": loc.get("longitude"),
+                                "city": loc.get("cityName"),
                             })
-                            logger.info("Parsed successfully using window.__INITIAL_STATE__ strategy")
-                            break
-        except Exception as e:
-            logger.debug("Failed parsing window.__INITIAL_STATE__ state", error=str(e))
+                            logger.info("Parsed via window.__INITIAL_STATE__")
+                    except Exception as e:
+                        logger.debug("__INITIAL_STATE__ parse error", error=str(e))
+                break
 
-        # Strategy 2: JSON-LD Product/Listing schemas
+        # Strategy 2: JSON-LD schema
         if not extracted.get("title") or not extracted.get("price"):
-            try:
-                ld_scripts = soup.find_all("script", type="application/ld+json")
-                for ld in ld_scripts:
-                    if ld.string:
-                        data = json.loads(ld.string)
-                        if isinstance(data, dict) and data.get("@type") in ["Product", "Accommodation", "SingleFamilyResidence"]:
-                            extracted["title"] = extracted.get("title") or data.get("name")
-                            extracted["description"] = extracted.get("description") or data.get("description")
-                            offers = data.get("offers", {})
-                            if isinstance(offers, dict):
-                                extracted["price"] = extracted.get("price") or offers.get("price")
-                            logger.info("Parsed fields using JSON-LD strategy")
-                            break
-            except Exception as e:
-                logger.debug("Failed parsing JSON-LD script block", error=str(e))
+            for ld in soup.find_all("script", type="application/ld+json"):
+                if not ld.string:
+                    continue
+                try:
+                    data = json.loads(ld.string)
+                    if isinstance(data, dict) and data.get("@type") in ("Product", "Accommodation", "SingleFamilyResidence"):
+                        extracted.setdefault("title", data.get("name"))
+                        extracted.setdefault("description", data.get("description"))
+                        offers = data.get("offers", {})
+                        if isinstance(offers, dict):
+                            extracted.setdefault("price", offers.get("price"))
+                        logger.info("Parsed via JSON-LD")
+                        break
+                except Exception as e:
+                    logger.debug("JSON-LD parse error", error=str(e))
 
-        # Strategy 3: OpenGraph & SEO Meta Tags
-        try:
-            # Title
-            og_title = soup.find("meta", attrs={"property": "og:title"})
-            if og_title and og_title.get("content"):
-                extracted["title"] = extracted.get("title") or og_title["content"]
+        # Strategy 3: OpenGraph / meta tags
+        og_title = soup.find("meta", attrs={"property": "og:title"})
+        if og_title:
+            extracted.setdefault("title", og_title.get("content"))
+        meta_desc = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", attrs={"property": "og:description"})
+        if meta_desc:
+            extracted.setdefault("description", meta_desc.get("content"))
+        canonical = soup.find("link", attrs={"rel": "canonical"}) or soup.find("meta", attrs={"property": "og:url"})
+        if canonical:
+            extracted.setdefault("listing_url", canonical.get("href") or canonical.get("content"))
+        og_img = soup.find("meta", attrs={"property": "og:image"})
+        if og_img and og_img.get("content"):
+            extracted.setdefault("images", [og_img["content"]])
 
-            # Description (contains prices/area frequently)
-            meta_desc = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", attrs={"property": "og:description"})
-            if meta_desc and meta_desc.get("content"):
-                extracted["description"] = extracted.get("description") or meta_desc["content"]
+        # Strategy 4: DOM classes fallback
+        h1 = soup.find("h1", class_="page_heading")
+        if h1:
+            extracted.setdefault("title", h1.text.strip())
+        price_el = soup.find(class_="property_price")
+        if price_el:
+            extracted.setdefault("price", price_el.text.strip())
+        area_el = soup.find(id="area_val")
+        if area_el:
+            extracted.setdefault("area", area_el.text.strip())
 
-            # Canonical URL
-            canonical = soup.find("link", attrs={"rel": "canonical"}) or soup.find("meta", attrs={"property": "og:url"})
-            if canonical:
-                extracted["listing_url"] = canonical.get("href") or canonical.get("content")
-
-            # Parse og:image tags
-            og_image = soup.find("meta", attrs={"property": "og:image"})
-            if og_image and og_image.get("content"):
-                extracted["images"] = [og_image["content"]]
-        except Exception as e:
-            logger.debug("Failed parsing meta tags", error=str(e))
-
-        # Strategy 4: DOM Selectors (BeautifulSoup Fallback)
-        try:
-            h1_val = soup.find("h1", class_="page_heading")
-            if h1_val:
-                extracted["title"] = extracted.get("title") or h1_val.text.strip()
-
-            price_val = soup.find(class_="property_price")
-            if price_val:
-                extracted["price"] = extracted.get("price") or price_val.text.strip()
-
-            area_val = soup.find(id="area_val")
-            if area_val:
-                extracted["area"] = extracted.get("area") or area_val.text.strip()
-        except Exception as e:
-            logger.debug("Failed parsing raw DOM elements", error=str(e))
-
-        # Final Validation
         if not extracted.get("title"):
-            raise ValueError("Parser Layout Failure: 'title' could not be resolved from raw HTML payload.")
+            raise ValueError("Could not extract title from 99acres page")
 
         return extracted
 
 
 class NinetyNineAcresNormalizer(BaseNormalizer):
-    """
-    Standardizes parsed unstructured 99acres details.
-    Validates types, converts values, and defaults missing fields.
-    """
-    def normalize(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalizes parsed 99acres data using shared utilities."""
+
+    def normalize(self, parsed: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            title = parsed_data.get("title", "").strip()
-            description = parsed_data.get("description", "")
-
-            # 1. Standardize Price
-            price_raw = parsed_data.get("price")
-            price_val = self._parse_price(price_raw, description)
-
-            # 2. Standardize Area (sqft)
-            area_raw = parsed_data.get("area")
-            area_val = self._parse_area(area_raw, description)
-
-            # 3. Standardize Beds/Baths
-            bedrooms = self._parse_beds_baths(parsed_data.get("bedrooms"), r"(\d+)\s*(?:BHK|Bedroom|bhk)")
-            if not bedrooms and title:
-                bedrooms = self._parse_beds_baths(title, r"(\d+)\s*(?:BHK|Bedroom|bhk)")
-            
-            bathrooms = self._parse_beds_baths(parsed_data.get("bathrooms"), r"(\d+)\s*(?:Bath|Bathroom|bath)")
-            if not bathrooms and description:
-                bathrooms = self._parse_beds_baths(description, r"(\d+)\s*(?:Bath|Bathroom|bath)")
-            if not bathrooms:
-                bathrooms = 2  # standard default fallback
-
-            # 4. Locality detection
-            locality = parsed_data.get("locality") or "Gandhipuram"
-            if not parsed_data.get("locality") and title:
-                # Basic search matching typical areas in Coimbatore
-                for loc in ["RS Puram", "Gandhipuram", "Peelamedu", "Singanallur", "Saibaba Colony", "Saravanampatti"]:
-                    if loc.lower() in title.lower():
-                        locality = loc
-                        break
-
-            # 5. Type detection
-            prop_type = "Apartment"
-            title_lower = title.lower()
-            if "villa" in title_lower:
-                prop_type = "Villa"
-            elif "independent house" in title_lower or "individual house" in title_lower:
-                prop_type = "Independent House"
-            elif "plot" in title_lower or "land" in title_lower:
-                prop_type = "Plot"
-
-            # 6. Coordinates
-            lat = parsed_data.get("latitude")
-            lon = parsed_data.get("longitude")
-            if lat:
-                lat = float(lat)
-            if lon:
-                lon = float(lon)
-
-            # 7. Listing Type
-            listing_type = "Rent" if "rent" in title_lower or "rent" in description.lower() else "Sale"
-
-            # 8. Images
-            images = parsed_data.get("images") or []
-            if not images:
-                images = [
-                    "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&auto=format&fit=crop",
-                    "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop",
-                    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&auto=format&fit=crop"
-                ]
-
-            return {
-                "title": title,
-                "property_type": prop_type,
-                "listing_type": listing_type,
-                "price": float(price_val) if price_val else 0.0,
-                "area_sqft": float(area_val) if area_val else 0.0,
-                "bedrooms": int(bedrooms) if bedrooms else 1,
-                "bathrooms": int(bathrooms),
-                "latitude": lat,
-                "longitude": lon,
-                "locality": locality,
-                "city": parsed_data.get("city") or "Coimbatore",
-                "state": "Tamil Nadu",
-                "source": "99acres",
-                "listing_url": parsed_data.get("listing_url", ""),
-                "images": images
-            }
+            return normalize_common(parsed, source=_SOURCE)
         except Exception as e:
-            raise TypeError(f"99acres Normalization failed: {str(e)}")
-
-    def _parse_price(self, raw_price: Any, desc: str) -> Optional[float]:
-        if not raw_price:
-            # Try to search in description (e.g. "price Rs 85 Lakhs" or "price Rs 1.25 Cr")
-            match = re.search(r"Rs\s*([\d\.]+)\s*(Crores|Cr|Lakhs|L|lacs)", desc, re.IGNORECASE)
-            if match:
-                val = float(match.group(1))
-                unit = match.group(2).lower()
-                return self._scale_price(val, unit)
-            return None
-
-        if isinstance(raw_price, (int, float)):
-            return float(raw_price)
-
-        # Parse string price (e.g. "Rs 1.25 Cr", "85 Lakhs", "Rs 8,500,000")
-        price_str = str(raw_price).lower().replace("rs", "").replace(",", "").strip()
-        match = re.search(r"([\d\.]+)\s*(crores|cr|lakhs|l|lacs|k|thousands)", price_str)
-        if match:
-            val = float(match.group(1))
-            unit = match.group(2)
-            return self._scale_price(val, unit)
-        
-        # fallback to numeric extract
-        nums = re.findall(r"\d+", price_str)
-        if nums:
-            return float("".join(nums))
-        return None
-
-    def _scale_price(self, val: float, unit: str) -> float:
-        if "cr" in unit or "crore" in unit:
-            return val * 10_000_000
-        elif "lakh" in unit or "l" in unit or "lac" in unit:
-            return val * 100_000
-        elif "k" in unit or "thousand" in unit:
-            return val * 1000
-        return val
-
-    def _parse_area(self, raw_area: Any, desc: str) -> Optional[float]:
-        if not raw_area:
-            match = re.search(r"Area\s*([\d\.,\s]+)\s*sq\.?ft", desc, re.IGNORECASE)
-            if match:
-                raw_area = match.group(1)
-            else:
-                return None
-
-        if isinstance(raw_area, (int, float)):
-            return float(raw_area)
-
-        # Parse string (e.g. "1,200 sqft", "Super Area 1200")
-        area_str = str(raw_area).lower().replace(",", "").strip()
-        match = re.search(r"([\d\.]+)", area_str)
-        if match:
-            return float(match.group(1))
-        return None
-
-    def _parse_beds_baths(self, field: Any, pattern: str) -> Optional[int]:
-        if not field:
-            return None
-        if isinstance(field, (int, float)):
-            return int(field)
-        
-        match = re.search(pattern, str(field), re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-        
-        # Try a basic digit extract
-        match_digit = re.search(r"(\d+)", str(field))
-        if match_digit:
-            return int(match_digit.group(1))
-        return None
+            raise TypeError(f"99acres normalization failed: {e}") from e

@@ -3,7 +3,6 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { MapView } from '../../components/shared/MapView';
 import { useLocalities, useProperties } from '../../hooks/useApi';
 import { useMapFilterStore } from '../../store/useMapFilterStore';
-import { mockLocalities, mockProperties } from '../../services/mockData';
 import type { Property } from '../../types';
 import { Search, Filter, X, MapPin, Building2 } from 'lucide-react';
 
@@ -39,7 +38,7 @@ export const MapPage: React.FC = () => {
     }
   }, [initialQuery, localities]);
 
-  const allProperties = properties || mockProperties;
+  const allProperties: Property[] = properties?.results ?? [];
 
   const filteredProperties = allProperties.filter((prop) => {
     if (store.selectedLocalityId && prop.locality_id !== store.selectedLocalityId) return false;
@@ -63,7 +62,7 @@ export const MapPage: React.FC = () => {
       if (bhk && prop.bedrooms !== parseInt(bhk[1])) return false;
       if ((q.includes('rent') || q.includes('lease')) && prop.listing_type?.toLowerCase() !== 'rent') return false;
       if ((q.includes('buy') || q.includes('sale')) && prop.listing_type?.toLowerCase() !== 'sale') return false;
-      const loc = mockLocalities.find((l) => q.includes(l.name.toLowerCase()));
+      const loc = localities?.find((l) => q.includes(l.name.toLowerCase()));
       if (loc && prop.locality_id !== loc.id) return false;
     }
 
@@ -74,10 +73,10 @@ export const MapPage: React.FC = () => {
     width: '100%',
     height: '36px',
     padding: '0 10px',
-    backgroundColor: '#111111',
-    border: '1px solid #2A2A2A',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E5E7EB',
     borderRadius: '6px',
-    color: '#A1A1AA',
+    color: '#374151',
     fontSize: '13px',
     outline: 'none',
     cursor: 'pointer',
@@ -89,14 +88,14 @@ export const MapPage: React.FC = () => {
       {/* Left sidebar */}
       <div
         className="flex flex-col overflow-hidden flex-shrink-0"
-        style={{ width: '360px', borderRight: '1px solid #1F1F1F', backgroundColor: '#000000' }}
+        style={{ width: '360px', borderRight: '1px solid #E5E7EB', backgroundColor: '#FFFFFF' }}
       >
         {/* Search bar */}
-        <div className="p-4" style={{ borderBottom: '1px solid #1F1F1F' }}>
+        <div className="p-4" style={{ borderBottom: '1px solid #E5E7EB' }}>
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
-              style={{ color: '#52525B' }}
+              style={{ color: '#9CA3AF' }}
             />
             <input
               type="text"
@@ -108,17 +107,17 @@ export const MapPage: React.FC = () => {
                 height: '36px',
                 paddingLeft: '32px',
                 paddingRight: '12px',
-                backgroundColor: '#0A0A0A',
-                border: '1px solid #2A2A2A',
+                backgroundColor: '#F9FAFB',
+                border: '1px solid #E5E7EB',
                 borderRadius: '6px',
-                color: '#FFFFFF',
+                color: '#000000',
               }}
             />
             {store.searchQuery && (
               <button
                 onClick={() => store.setFilters({ searchQuery: '' })}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                style={{ color: '#52525B' }}
+                style={{ color: '#9CA3AF' }}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -127,17 +126,17 @@ export const MapPage: React.FC = () => {
         </div>
 
         {/* Filter toggle */}
-        <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #111111' }}>
-          <span className="text-xs" style={{ color: '#71717A' }}>
+        <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #F3F4F6' }}>
+          <span className="text-xs" style={{ color: '#9CA3AF' }}>
             {filteredProperties.length} properties
           </span>
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded transition-colors"
             style={{
-              backgroundColor: showFilters ? '#FFFFFF' : '#111111',
-              color: showFilters ? '#000000' : '#A1A1AA',
-              border: '1px solid #2A2A2A',
+              backgroundColor: showFilters ? '#000000' : '#F3F4F6',
+              color: showFilters ? '#FFFFFF' : '#374151',
+              border: '1px solid #E5E7EB',
             }}
           >
             <Filter className="w-3 h-3" />
@@ -147,36 +146,36 @@ export const MapPage: React.FC = () => {
 
         {/* Filters panel */}
         {showFilters && (
-          <div className="p-4 space-y-4" style={{ borderBottom: '1px solid #1F1F1F' }}>
+          <div className="p-4 space-y-4" style={{ borderBottom: '1px solid #E5E7EB' }}>
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: '#71717A' }}>Property Type</label>
+              <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>Property Type</label>
               <select
                 value={store.propertyType}
                 onChange={(e) => store.setFilters({ propertyType: e.target.value })}
                 style={selectTrigger}
               >
                 {['All', 'Apartment', 'Villa', 'Independent House', 'Plot'].map((v) => (
-                  <option key={v} value={v} style={{ backgroundColor: '#111111' }}>{v}</option>
+                  <option key={v} value={v}>{v}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: '#71717A' }}>Locality</label>
+              <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>Locality</label>
               <select
                 value={store.selectedLocalityId || ''}
                 onChange={(e) => store.setFilters({ selectedLocalityId: e.target.value || undefined })}
                 style={selectTrigger}
               >
-                <option value="" style={{ backgroundColor: '#111111' }}>All Localities</option>
-                {(localities || mockLocalities).map((l) => (
-                  <option key={l.id} value={l.id} style={{ backgroundColor: '#111111' }}>{l.name}</option>
+                <option value="">All Localities</option>
+                {(localities ?? []).map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: '#71717A' }}>
+              <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>
                 Max Price: {formatPrice(store.priceMax)}
               </label>
               <input
@@ -187,32 +186,31 @@ export const MapPage: React.FC = () => {
                 value={store.priceMax}
                 onChange={(e) => store.setFilters({ priceMax: parseInt(e.target.value) })}
                 className="w-full"
-                style={{ accentColor: '#FFFFFF' }}
               />
             </div>
 
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-xs mb-1.5" style={{ color: '#71717A' }}>Bedrooms</label>
+                <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>Bedrooms</label>
                 <select
                   value={store.bedrooms === 'All' ? 'All' : String(store.bedrooms)}
                   onChange={(e) => store.setFilters({ bedrooms: e.target.value === 'All' ? 'All' : parseInt(e.target.value) })}
                   style={selectTrigger}
                 >
                   {['All', '1', '2', '3', '4'].map((v) => (
-                    <option key={v} value={v} style={{ backgroundColor: '#111111' }}>{v === 'All' ? 'Any' : `${v} BHK`}</option>
+                    <option key={v} value={v}>{v === 'All' ? 'Any' : `${v} BHK`}</option>
                   ))}
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-xs mb-1.5" style={{ color: '#71717A' }}>Bathrooms</label>
+                <label className="block text-xs mb-1.5" style={{ color: '#6B7280' }}>Bathrooms</label>
                 <select
                   value={store.bathrooms === 'All' ? 'All' : String(store.bathrooms)}
                   onChange={(e) => store.setFilters({ bathrooms: e.target.value === 'All' ? 'All' : parseInt(e.target.value) })}
                   style={selectTrigger}
                 >
                   {['All', '1', '2', '3', '4'].map((v) => (
-                    <option key={v} value={v} style={{ backgroundColor: '#111111' }}>{v === 'All' ? 'Any' : v}</option>
+                    <option key={v} value={v}>{v === 'All' ? 'Any' : v}</option>
                   ))}
                 </select>
               </div>
@@ -221,9 +219,9 @@ export const MapPage: React.FC = () => {
             <button
               onClick={() => store.setFilters({ searchQuery: '', propertyType: 'All', bedrooms: 'All', bathrooms: 'All', priceMin: 0, priceMax: 50000000, areaMin: 0, areaMax: 10000, selectedLocalityId: undefined, commuteDestination: '' })}
               className="text-xs transition-colors"
-              style={{ color: '#71717A' }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#FFFFFF')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#71717A')}
+              style={{ color: '#6B7280' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#000000')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#6B7280')}
             >
               Reset filters
             </button>
@@ -234,12 +232,12 @@ export const MapPage: React.FC = () => {
         <div className="flex-1 overflow-y-auto">
           {filteredProperties.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-              <Building2 className="w-8 h-8 mb-3" style={{ color: '#2A2A2A' }} />
-              <p className="text-sm" style={{ color: '#52525B' }}>No properties match your filters.</p>
+              <Building2 className="w-8 h-8 mb-3" style={{ color: '#D1D5DB' }} />
+              <p className="text-sm" style={{ color: '#9CA3AF' }}>No properties match your filters.</p>
             </div>
           ) : (
             filteredProperties.map((prop) => {
-              const locality = (localities || mockLocalities).find((l) => l.id === prop.locality_id);
+              const locality = localities?.find((l) => l.id === prop.locality_id);
               const isSelected = selectedProperty?.id === prop.id;
               return (
                 <div
@@ -247,11 +245,11 @@ export const MapPage: React.FC = () => {
                   onClick={() => setSelectedProperty(isSelected ? null : prop)}
                   className="p-4 cursor-pointer transition-colors"
                   style={{
-                    borderBottom: '1px solid #111111',
-                    backgroundColor: isSelected ? '#111111' : 'transparent',
+                    borderBottom: '1px solid #F3F4F6',
+                    backgroundColor: isSelected ? '#F3F4F6' : 'transparent',
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = '#0A0A0A';
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB';
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
@@ -267,20 +265,20 @@ export const MapPage: React.FC = () => {
                       to={`/property/${prop.id}`}
                       onClick={(e) => e.stopPropagation()}
                       className="text-sm font-medium leading-snug hover:underline"
-                      style={{ color: '#FFFFFF' }}
+                      style={{ color: '#000000' }}
                     >
                       {prop.title}
                     </Link>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-1 text-xs" style={{ color: '#71717A' }}>
+                  <div className="flex items-center gap-1.5 mt-1 text-xs" style={{ color: '#6B7280' }}>
                     <MapPin className="w-3 h-3" />
                     {locality?.name || 'Coimbatore'}
                   </div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-semibold" style={{ color: '#FFFFFF' }}>
+                    <span className="text-sm font-semibold" style={{ color: '#000000' }}>
                       {formatPrice(prop.price)}
                     </span>
-                    <div className="flex items-center gap-2 text-xs" style={{ color: '#71717A' }}>
+                    <div className="flex items-center gap-2 text-xs" style={{ color: '#6B7280' }}>
                       {prop.bedrooms && <span>{prop.bedrooms} BHK</span>}
                       {prop.area_sqft && <span>{prop.area_sqft} sqft</span>}
                     </div>
@@ -297,6 +295,8 @@ export const MapPage: React.FC = () => {
         <MapView
           localityId={store.selectedLocalityId || (localities?.[0]?.id || '')}
           propertyId={selectedProperty?.id}
+          properties={allProperties}
+          localities={localities}
           height="h-full"
         />
       </div>

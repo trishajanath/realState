@@ -87,3 +87,31 @@ Any change to auth, database schema, or secrets **requires human sign-off in [ag
 | **Downtime potential** | None — restricting CORS is additive |
 | **User impact** | None for legitimate users; eliminates cross-origin attack vector |
 | **Pre-deploy checklist** | ☐ Replace `allow_origins=["*"]` with `["https://yourdomain.com", "https://www.yourdomain.com"]` · ☐ Add `CORS_ORIGINS` as a configurable environment variable in `config.py` · ☐ Test that frontend on the production domain can still reach the backend API |
+
+---
+
+## Risk #7 — Mixed Dark/Light Theme After XVERTA Rebrand (Change #16)
+
+| Field | Detail |
+|---|---|
+| **Change** | Global CSS switched to light theme; Home, Login, Signup, and AppLayout migrated; inner pages (Compare, Analytics, Property, Map, Locality) still carry dark inline styles |
+| **Risk level** | LOW |
+| **Blast radius** | Cosmetic only — inner dashboard pages render dark content on a white-inherited shell. No data, auth, or functionality is affected. |
+| **Rollback complexity** | Very low — `git checkout HEAD` on the 5 changed files fully reverts to dark theme |
+| **Downtime potential** | None |
+| **User impact** | Authenticated users navigating to Compare, Analytics, Property, Map, or Locality pages will see those pages still in the dark theme while the sidebar/header/home are light. Jarring but non-blocking. |
+| **Pre-deploy checklist** | ☐ Migrate remaining inner pages to light theme before a public-facing release · ☐ Validate ForgotPassword and VerifyEmail pages render correctly in light theme (no explicit inline overrides — rely on global CSS) · ☐ Confirm `color-scheme: light` in `index.css` does not cause browser-native dark-mode UI elements (scrollbars, inputs) to render incorrectly on dark-mode OS settings |
+
+---
+
+## Risk #8 — API_BASE Env Var and Signup Endpoint Change (Change #17)
+
+| Field | Detail |
+|---|---|
+| **Change** | `API_BASE` in `useApi.ts` now reads `VITE_API_BASE_URL` env var (falls back to `localhost:8000`); Signup endpoint changed from `/auth/login` to `/auth/register` |
+| **Risk level** | MEDIUM |
+| **Blast radius** | If `VITE_API_BASE_URL` is not set in a production Vite build, all API calls in Login, Signup, and every `useApi` hook will target `localhost:8000` — which does not exist in production. Signup will also fail with 404 if the backend `/auth/register` route is absent. |
+| **Rollback complexity** | Low — set `VITE_API_BASE_URL` in the build environment, or revert `useApi.ts` to the hardcoded constant |
+| **Downtime potential** | None for existing authenticated users (token already stored). New registrations fail until backend route is confirmed. |
+| **User impact** | New users cannot create accounts if `/auth/register` is missing. All users lose API access in production if `VITE_API_BASE_URL` is unset. |
+| **Pre-deploy checklist** | ☐ Confirm backend exposes `POST /api/v1/auth/register` accepting `{ name, email, password }` and returning `{ access_token, user }` · ☐ Set `VITE_API_BASE_URL=https://your-api-domain.com/api/v1` in production build environment or CI secrets · ☐ Verify Signup response shape: if `/auth/register` returns a different payload than `/auth/login`, update `access_token` extraction in `Signup/index.tsx` · ☐ Do not set `VITE_API_BASE_URL` in `.env` committed to git |

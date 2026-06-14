@@ -39,12 +39,12 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#000000', color: '#FFFFFF' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#FFFFFF', color: '#000000' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 lg:hidden"
-          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.25)' }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -55,29 +55,29 @@ export const AppLayout: React.FC = () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
-          width: '280px',
-          backgroundColor: '#000000',
-          borderRight: '1px solid #1F1F1F',
+          width: '260px',
+          backgroundColor: '#FFFFFF',
+          borderRight: '1px solid #E5E7EB',
           flexShrink: 0,
         }}
       >
         {/* Logo */}
         <div
-          className="flex items-center gap-3 px-6"
-          style={{ height: '64px', borderBottom: '1px solid #1F1F1F', flexShrink: 0 }}
+          className="flex items-center gap-3 px-5"
+          style={{ height: '64px', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}
         >
           <div
-            className="flex items-center justify-center rounded"
-            style={{ width: '28px', height: '28px', backgroundColor: '#FFFFFF' }}
+            className="flex items-center justify-center rounded-lg"
+            style={{ width: '32px', height: '32px', backgroundColor: '#000000', flexShrink: 0 }}
           >
-            <Building2 className="w-4 h-4" style={{ color: '#000000' }} />
+            <Building2 className="w-4 h-4" style={{ color: '#FFFFFF' }} />
           </div>
           <div>
-            <div className="font-semibold text-sm leading-none" style={{ color: '#FFFFFF' }}>
-              CoimbatoreREI
+            <div className="font-bold text-sm leading-none tracking-tight" style={{ color: '#000000', letterSpacing: '-0.02em' }}>
+              XVERTA
             </div>
-            <div className="text-xs mt-0.5" style={{ color: '#71717A' }}>
-              Intelligence Platform
+            <div className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+              Real Estate Intelligence
             </div>
           </div>
         </div>
@@ -86,8 +86,8 @@ export const AppLayout: React.FC = () => {
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <div className="mb-1">
             <div
-              className="px-3 mb-2 text-xs font-medium uppercase tracking-wider"
-              style={{ color: '#52525B' }}
+              className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider"
+              style={{ color: '#C4C4C4' }}
             >
               Navigation
             </div>
@@ -99,21 +99,23 @@ export const AppLayout: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-3 rounded transition-colors duration-150 mb-0.5"
+                  aria-current={active ? 'page' : undefined}
+                  className="flex items-center gap-3 px-3 rounded-lg transition-colors duration-150 mb-0.5"
                   style={{
                     height: '40px',
-                    backgroundColor: active ? '#1C1C1C' : 'transparent',
-                    color: active ? '#FFFFFF' : '#A1A1AA',
+                    backgroundColor: active ? '#F3F4F6' : 'transparent',
+                    color: active ? '#000000' : '#6B7280',
+                    fontWeight: active ? 600 : 400,
                   }}
                   onMouseEnter={(e) => {
-                    if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = '#111111';
+                    if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB';
                   }}
                   onMouseLeave={(e) => {
                     if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
                   }}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className="text-sm">{item.name}</span>
                 </Link>
               );
             })}
@@ -121,32 +123,32 @@ export const AppLayout: React.FC = () => {
         </nav>
 
         {/* Bottom section */}
-        <div className="px-3 py-4" style={{ borderTop: '1px solid #1F1F1F' }}>
+        <div className="px-3 py-4" style={{ borderTop: '1px solid #E5E7EB' }}>
           <div
-            className="flex items-center gap-3 px-3 rounded mb-1"
-            style={{ height: '40px', color: '#71717A' }}
+            className="flex items-center gap-3 px-3 rounded-lg mb-1"
+            style={{ height: '40px' }}
           >
             <div
               className="flex items-center justify-center rounded-full text-xs font-semibold flex-shrink-0"
-              style={{ width: '24px', height: '24px', backgroundColor: '#1C1C1C', color: '#A1A1AA' }}
+              style={{ width: '28px', height: '28px', backgroundColor: '#F3F4F6', color: '#374151', border: '1px solid #E5E7EB' }}
             >
               {userName.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm truncate flex-1" style={{ color: '#A1A1AA' }}>
+            <span className="text-sm truncate flex-1" style={{ color: '#374151' }}>
               {userName}
             </span>
           </div>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 rounded w-full transition-colors duration-150"
-            style={{ height: '40px', color: '#71717A' }}
+            className="flex items-center gap-3 px-3 rounded-lg w-full transition-colors duration-150"
+            style={{ height: '40px', color: '#9CA3AF' }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = '#111111';
-              (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
+              (e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB';
+              (e.currentTarget as HTMLElement).style.color = '#000000';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-              (e.currentTarget as HTMLElement).style.color = '#71717A';
+              (e.currentTarget as HTMLElement).style.color = '#9CA3AF';
             }}
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
@@ -162,33 +164,34 @@ export const AppLayout: React.FC = () => {
           className="sticky top-0 z-20 flex items-center justify-between px-6"
           style={{
             height: '64px',
-            backgroundColor: '#000000',
-            borderBottom: '1px solid #1F1F1F',
+            backgroundColor: '#FFFFFF',
+            borderBottom: '1px solid #E5E7EB',
           }}
         >
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-1.5 rounded transition-colors"
-              style={{ color: '#A1A1AA' }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#111111')}
+              aria-label="Open navigation"
+              className="lg:hidden p-1.5 rounded-lg transition-colors"
+              style={{ color: '#6B7280' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#F3F4F6')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')}
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="text-sm font-medium" style={{ color: '#A1A1AA' }}>
+            <div className="text-sm font-semibold" style={{ color: '#000000' }}>
               {navItems.find((n) => isActive(n.path))?.name || 'Overview'}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div
-              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded"
-              style={{ backgroundColor: '#111111', color: '#71717A', border: '1px solid #1F1F1F' }}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium"
+              style={{ backgroundColor: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }}
             >
               <span
                 className="inline-block rounded-full"
-                style={{ width: '6px', height: '6px', backgroundColor: '#FFFFFF' }}
+                style={{ width: '6px', height: '6px', backgroundColor: '#16A34A' }}
               />
               Market Active
             </div>
@@ -196,16 +199,16 @@ export const AppLayout: React.FC = () => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 flex flex-col overflow-auto" style={{ backgroundColor: '#000000' }}>
+        <main className="flex-1 flex flex-col overflow-auto" style={{ backgroundColor: '#FFFFFF' }}>
           <Outlet />
         </main>
 
         {/* Footer */}
         <footer
-          className="px-6 py-4 text-xs"
-          style={{ borderTop: '1px solid #1F1F1F', color: '#52525B' }}
+          className="px-6 py-3 text-xs"
+          style={{ borderTop: '1px solid #E5E7EB', color: '#C4C4C4' }}
         >
-          © 2026 CoimbatoreREI · Real Estate Intelligence Platform
+          © 2026 XVERTA · Real Estate Intelligence Platform
         </footer>
       </div>
 
@@ -213,14 +216,14 @@ export const AppLayout: React.FC = () => {
       {selectedIds.length > 0 && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
           <div
-            className="flex items-center justify-between gap-6 px-4 py-3 rounded-lg"
-            style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}
+            className="flex items-center justify-between gap-6 px-4 py-3 rounded-xl shadow-lg"
+            style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
           >
             <div className="flex items-center gap-3">
-              <ArrowLeftRight className="w-4 h-4 flex-shrink-0" style={{ color: '#A1A1AA' }} />
+              <ArrowLeftRight className="w-4 h-4 flex-shrink-0" style={{ color: '#6B7280' }} />
               <div>
-                <div className="text-sm font-medium text-white">Compare Properties</div>
-                <div className="text-xs" style={{ color: '#71717A' }}>
+                <div className="text-sm font-semibold" style={{ color: '#000000' }}>Compare Properties</div>
+                <div className="text-xs" style={{ color: '#9CA3AF' }}>
                   {selectedIds.length} of 4 selected
                 </div>
               </div>
@@ -228,17 +231,17 @@ export const AppLayout: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={clear}
-                className="text-xs px-3 py-1.5 rounded transition-colors"
-                style={{ color: '#71717A' }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#FFFFFF')}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#71717A')}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium"
+                style={{ color: '#9CA3AF' }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#000000')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#9CA3AF')}
               >
                 Clear
               </button>
               <Link
                 to="/compare"
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded font-medium transition-colors"
-                style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                style={{ backgroundColor: '#000000', color: '#FFFFFF' }}
               >
                 Compare
                 <ChevronRight className="w-3.5 h-3.5" />

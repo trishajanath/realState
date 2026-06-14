@@ -91,13 +91,10 @@ export const VerifyEmailPage: React.FC = () => {
           </CardHeader>
           <CardContent className="pt-2">
             <Button
-              onClick={() => {
-                localStorage.setItem('auth_token', 'mock_jwt_token_123');
-                navigate('/');
-              }}
+              onClick={() => navigate('/login')}
               className="w-full text-xs py-3 font-bold uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md transition-all"
             >
-              Go to Dashboard
+              Sign In to Dashboard
             </Button>
           </CardContent>
         </motion.div>
@@ -222,10 +219,7 @@ export const VerifyEmailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 p-6 relative">
-      {/* Background visual blobs */}
-      <div className="absolute top-1/4 left-1/3 w-64 h-64 rounded-full bg-blue-600/5 blur-[80px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/3 w-72 h-72 rounded-full bg-indigo-600/5 blur-[80px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col justify-center items-center p-6" style={{ backgroundColor: '#F9FAFB' }}>
 
       {/* Main card */}
       <motion.div
@@ -251,46 +245,6 @@ export const VerifyEmailPage: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* State simulation triggers at bottom for testing */}
-      {!isLoading && (
-        <div className="mt-8 flex flex-wrap gap-2 max-w-md justify-center relative z-10">
-          <span className="text-[9px] font-mono text-slate-400 uppercase w-full text-center mb-1">
-            Simulate Verification States:
-          </span>
-          <button
-            onClick={() => navigate('/verify-email')}
-            className={`px-2 py-1 rounded-lg border text-[9px] font-mono font-bold cursor-pointer ${
-              !statusParam ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
-            }`}
-          >
-            1. Email Sent
-          </button>
-          <button
-            onClick={() => navigate('/verify-email?status=success')}
-            className={`px-2 py-1 rounded-lg border text-[9px] font-mono font-bold cursor-pointer ${
-              statusParam === 'success' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
-            }`}
-          >
-            2. Verified Success
-          </button>
-          <button
-            onClick={() => navigate('/verify-email?status=expired')}
-            className={`px-2 py-1 rounded-lg border text-[9px] font-mono font-bold cursor-pointer ${
-              statusParam === 'expired' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
-            }`}
-          >
-            3. Link Expired
-          </button>
-          <button
-            onClick={() => navigate('/verify-email?status=error')}
-            className={`px-2 py-1 rounded-lg border text-[9px] font-mono font-bold cursor-pointer ${
-              statusParam === 'error' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
-            }`}
-          >
-            4. Error
-          </button>
-        </div>
-      )}
     </div>
   );
 };

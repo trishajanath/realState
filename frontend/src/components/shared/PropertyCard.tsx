@@ -53,7 +53,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-900 border border-slate-200/50 shadow-sm z-10">
             {property.property_type}
           </div>
-          <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-mono tracking-wider uppercase font-bold z-10">
+          <div className="absolute top-3 right-3 bg-black text-white px-2 py-0.5 rounded-lg text-[10px] font-mono tracking-wider uppercase font-bold z-10">
             Grade {ratingGrade}
           </div>
         </div>
@@ -69,7 +69,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             </span>
           </div>
 
-          <h3 className="text-sm font-semibold text-slate-800 line-clamp-1 mt-1 hover:text-blue-600 transition-colors">
+          <h3 className="text-sm font-semibold text-slate-800 line-clamp-1 mt-1 hover:text-black transition-colors">
             {property.title}
           </h3>
 

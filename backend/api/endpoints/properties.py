@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from uuid import UUID
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Literal
 
 from core.database import get_mongo_db
 from schemas.property import PropertyCreate, PropertyUpdate, PropertyResponse, PropertyListResponse
@@ -16,10 +16,6 @@ async def create_property(
     schema: PropertyCreate,
     mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
 ):
-    """
-    Creates a new real estate property listing in MongoDB, triggers Gemini AI
-    to generate description/deal scores, and syncs the listing to the search index.
-    """
     service = PropertyService(mongo_db)
     return await service.create_property(schema)
 
@@ -27,34 +23,35 @@ async def create_property(
 @router.get("", response_model=PropertyListResponse)
 async def list_properties(
     locality_id: Optional[UUID] = Query(None, description="Filter by Locality UUID"),
-    property_type: Optional[str] = Query(None, description="Filter by Property Type"),
-    min_price: Optional[Decimal] = Query(None, description="Filter by Minimum Price limit"),
-    max_price: Optional[Decimal] = Query(None, description="Filter by Maximum Price limit"),
-    search: Optional[str] = Query(None, description="Full-text search matching title, locality, and description in MongoDB"),
-    skip: int = Query(0, ge=0, description="Number of listings to skip"),
-    limit: int = Query(20, ge=1, le=100, description="Limit of listings to fetch"),
+    property_type: Optional[str] = Query(None, description="Property type: Apartment, Villa, Independent House, Plot"),
+    listing_type: Optional[str] = Query(None, description="Listing type: Sale, Rent"),
+    min_price: Optional[Decimal] = Query(None, description="Minimum price in INR"),
+    max_price: Optional[Decimal] = Query(None, description="Maximum price in INR"),
+    min_bedrooms: Optional[int] = Query(None, ge=0, description="Minimum number of bedrooms"),
+    max_bedrooms: Optional[int] = Query(None, ge=0, description="Maximum number of bedrooms"),
+    search: Optional[str] = Query(None, description="Full-text search on title, locality, and description"),
+    sort_by: Optional[Literal["price", "area_sqft", "bedrooms"]] = Query(None, description="Sort field"),
+    sort_order: Optional[Literal["asc", "desc"]] = Query("asc", description="Sort direction"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
 ):
-    """
-    Retrieves property listings with pagination from MongoDB. Supports price range,
-    property type, locality, or hybrid full-text search.
-    """
     service = PropertyService(mongo_db)
     results, total = await service.list_properties(
         locality_id=locality_id,
         property_type=property_type,
+        listing_type=listing_type,
         min_price=min_price,
         max_price=max_price,
+        min_bedrooms=min_bedrooms,
+        max_bedrooms=max_bedrooms,
         search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
         skip=skip,
-        limit=limit
+        limit=limit,
     )
-    return {
-        "total": total,
-        "skip": skip,
-        "limit": limit,
-        "results": results
-    }
+    return {"total": total, "skip": skip, "limit": limit, "results": results}
 
 
 @router.get("/{id}", response_model=PropertyResponse)
@@ -62,9 +59,6 @@ async def get_property(
     id: UUID,
     mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
 ):
-    """
-    Retrieves a single property listing details by its UUID from MongoDB.
-    """
     service = PropertyService(mongo_db)
     prop = await service.get_property(id)
     if not prop:
@@ -81,9 +75,6 @@ async def update_property(
     schema: PropertyUpdate,
     mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
 ):
-    """
-    Updates an existing property listing inside MongoDB.
-    """
     service = PropertyService(mongo_db)
     prop = await service.update_property(id, schema)
     if not prop:
@@ -99,9 +90,6 @@ async def delete_property(
     id: UUID,
     mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
 ):
-    """
-    Deletes a property listing from the MongoDB search index.
-    """
     service = PropertyService(mongo_db)
     deleted = await service.delete_property(id)
     if not deleted:

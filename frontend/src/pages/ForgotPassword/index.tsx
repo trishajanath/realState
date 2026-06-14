@@ -49,18 +49,14 @@ export const ForgotPasswordPage: React.FC = () => {
 
     setIsLoading(true);
 
+    // Password reset email flow is not yet implemented on the backend.
+    // Show a confirmation regardless to prevent email enumeration.
     setTimeout(() => {
-      if (email.toLowerCase() === 'error@example.com') {
-        setError('No account found with this email address.');
-        toast('Failed to Send Link', 'Email address not found.', 'error');
-        setIsLoading(false);
-      } else {
-        setIsSubmitted(true);
-        setResendCooldown(30);
-        toast('Reset Email Sent', 'Check your inbox for the password reset instructions.', 'success');
-        setIsLoading(false);
-      }
-    }, 1500);
+      setIsSubmitted(true);
+      setResendCooldown(30);
+      toast('Reset Email Sent', 'If an account exists for this email, you will receive instructions shortly.', 'success');
+      setIsLoading(false);
+    }, 800);
   };
 
   const handleResend = () => {
@@ -75,10 +71,7 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 p-6 relative">
-      {/* Background visual blobs */}
-      <div className="absolute top-1/4 left-1/3 w-64 h-64 rounded-full bg-blue-600/5 blur-[80px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/3 w-72 h-72 rounded-full bg-indigo-600/5 blur-[80px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col justify-center items-center p-6" style={{ backgroundColor: '#F9FAFB' }}>
 
       {/* Main card */}
       <motion.div
@@ -103,7 +96,7 @@ export const ForgotPasswordPage: React.FC = () => {
                       <ArrowLeft className="h-4.5 w-4.5" />
                     </Link>
                     <span className="font-display font-extrabold text-slate-900 tracking-tight text-sm">
-                      Coimbatore<span className="text-blue-600">REI</span>
+                      XVERTA
                     </span>
                   </div>
                   <CardTitle className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900">
@@ -148,7 +141,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 <CardFooter className="flex justify-center border-t border-slate-100 pt-4 mt-2">
                   <p className="text-xs text-slate-400 font-sans">
                     Remember your password?{' '}
-                    <Link to="/login" className="text-blue-600 hover:underline font-semibold transition-colors">
+                    <Link to="/login" className="font-semibold hover:underline transition-colors" style={{ color: '#374151' }}>
                       Sign In
                     </Link>
                   </p>
@@ -191,7 +184,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 <CardFooter className="flex justify-center border-t border-slate-100 pt-4 mt-4">
                   <Link
                     to="/login"
-                    className="text-xs font-bold font-mono text-blue-600 hover:underline tracking-wider uppercase flex items-center gap-1"
+                    className="text-xs font-bold font-mono hover:underline tracking-wider uppercase flex items-center gap-1" style={{ color: '#374151' }}
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     <span>Back to login</span>

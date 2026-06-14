@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @import "tailwindcss";
 
@@ -7,20 +7,20 @@
   --font-display: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
-  /* Xverta monochrome palette */
-  --color-surface-0: #000000;
-  --color-surface-1: #0A0A0A;
-  --color-surface-2: #111111;
-  --color-surface-hover: #161616;
-  --color-surface-active: #1C1C1C;
+  /* Xverta light palette */
+  --color-surface-0: #FFFFFF;
+  --color-surface-1: #F7F7F7;
+  --color-surface-2: #F0F0F0;
+  --color-surface-hover: #EBEBEB;
+  --color-surface-active: #E4E4E4;
 
-  --color-border: #1F1F1F;
-  --color-border-2: #2A2A2A;
+  --color-border: #E0E0E0;
+  --color-border-2: #D5D5D5;
 
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #A1A1AA;
+  --color-text-primary: #000000;
+  --color-text-secondary: #3F3F46;
   --color-text-muted: #71717A;
-  --color-text-disabled: #52525B;
+  --color-text-disabled: #A1A1AA;
 }
 
 @layer base {
@@ -29,13 +29,13 @@
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
     @apply antialiased;
-    background-color: #000000;
-    color: #FFFFFF;
+    background-color: #FFFFFF;
+    color: #000000;
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
@@ -48,7 +48,7 @@
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
     font-weight: 600;
     letter-spacing: -0.025em;
-    color: #FFFFFF;
+    color: #000000;
   }
 
   a {
@@ -66,15 +66,15 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2A2A2A;
+  background: #D5D5D5;
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3F3F3F;
+  background: #AAAAAA;
 }
 
 /* Focus ring */
 :focus-visible {
-  outline: 1px solid #FFFFFF;
+  outline: 1px solid #000000;
   outline-offset: 2px;
 }

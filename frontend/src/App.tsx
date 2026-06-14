@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppLayout } from './layouts/AppLayout';
 import { HomePage } from './pages/Home';
@@ -21,6 +21,14 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const NotFoundPage = () => (
+  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+    <div className="text-6xl font-bold mb-4" style={{ color: '#000000', letterSpacing: '-0.05em' }}>404</div>
+    <p className="text-sm mb-6" style={{ color: '#6B7280' }}>This page doesn't exist.</p>
+    <Link to="/" className="text-sm font-semibold underline" style={{ color: '#000000' }}>Back to overview</Link>
+  </div>
+);
 
 // Guard helper: Redirects to /login if not authenticated
 const ProtectedRoute = () => {
@@ -56,6 +64,7 @@ function App() {
                 <Route path="/compare" element={<ComparePage />} />
                 <Route path="/map" element={<MapPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Route>
 
@@ -66,6 +75,8 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
             </Route>
+
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>

@@ -10,6 +10,7 @@ export interface Property {
   latitude?: number | null;
   longitude?: number | null;
   locality_id?: string | null;
+  locality_name?: string | null;
   city: string;
   state: string;
   source?: string | null;
@@ -17,6 +18,12 @@ export interface Property {
   ai_description?: string | null;
   ai_investment_rating?: string | null;
   images?: string[];
+  locality?: {
+    id?: string | null;
+    name: string;
+    city: string;
+    state: string;
+  } | null;
 }
 
 export interface Locality {
@@ -24,8 +31,8 @@ export interface Locality {
   name: string;
   city: string;
   state: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface TransitMetric {
@@ -33,8 +40,9 @@ export interface TransitMetric {
   distance_meters: number;
 }
 
+/** Flat metrics shape returned by GET /api/v1/localities/:id/metrics */
 export interface LocalityMetrics {
-  id: string;
+  id?: string | null;
   locality_id: string;
   avg_property_price?: number | null;
   median_property_price?: number | null;
@@ -43,7 +51,7 @@ export interface LocalityMetrics {
   rental_yield_estimate?: number | null;
   listing_velocity?: number | null;
   property_inventory?: number | null;
-  
+
   schools_per_sq_km?: number | null;
   hospitals_per_sq_km?: number | null;
   restaurants_per_sq_km?: number | null;
@@ -55,14 +63,14 @@ export interface LocalityMetrics {
   nearest_airport?: TransitMetric | null;
   nearest_bus_terminal?: TransitMetric | null;
   highway_access_score?: number | null;
-  
+
   metro_proximity?: number | null;
   industrial_corridor_proximity?: number | null;
   it_park_proximity?: number | null;
 }
 
 export interface LocalityScores {
-  id: string;
+  id?: string | null;
   locality_id: string;
   education_score?: number | null;
   healthcare_score?: number | null;
@@ -84,13 +92,6 @@ export interface RecommendationItem {
   generation_timestamp: string;
 }
 
-export interface RecommendationMetadata {
-  last_run_timestamp?: string | null;
-  total_recommendations_count: number;
-  stale_count: number;
-  feature_drift_metrics: Record<string, any>;
-}
-
 export interface Amenity {
   id: string;
   name: string;
@@ -100,5 +101,11 @@ export interface Amenity {
   address?: string | null;
   source?: string | null;
   confidence_score?: number | null;
+  locality_id?: string | null;
   last_verified_at?: string | null;
+}
+
+export interface AuthUser {
+  email: string;
+  name: string;
 }

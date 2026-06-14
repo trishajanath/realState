@@ -33,32 +33,42 @@ Mock data includes:
 
 ## Shortcut #2 — Hardcoded Design System Colors as Inline Styles
 
-**Change reference**: Changes #2, #5, #6, #7, #8, #9, #10, #11, #14
+**Change reference**: Changes #2, #5, #6, #7, #8, #9, #10, #11, #14, #16
 
 **What happened**:
-The Xverta Enterprise Design System v2 palette is implemented as raw inline `style={{ color: '#52525B' }}` objects throughout all components rather than as CSS custom properties or a typed design token object.
+The Xverta design palette is implemented as raw inline `style={{ color: '#6B7280' }}` objects throughout all components rather than as CSS custom properties or a typed design token object. After the light theme migration in Change #16, the hex values in the redesigned pages changed:
 
-Hex values used across the codebase:
+**Pre-Change #16 (dark theme)** — hex values used in inner dashboard pages still:
 - Backgrounds: `#000000`, `#0A0A0A`, `#111111`, `#161616`, `#1C1C1C`
 - Borders: `#1F1F1F`, `#2A2A2A`, `#3F3F46`
 - Text: `#FFFFFF`, `#A1A1AA`, `#71717A`, `#52525B`, `#3F3F46`
 
-**Why it happened**: Tailwind CSS classes were used initially but conflicted with the dark design requirements; inline styles provided immediate override control without requiring Tailwind configuration changes.
+**Post-Change #16 (light theme)** — hex values in Home, Login, Signup, AppLayout:
+- Backgrounds: `#FFFFFF`, `#F9FAFB`, `#F3F4F6`, `#FAFAFA`, `#000000` (accent only)
+- Borders: `#E5E7EB`, `#F3F4F6`
+- Text: `#000000`, `#374151`, `#6B7280`, `#9CA3AF`
+- Accents: `#16A34A` (green), `#DC2626` (error red)
 
-**Risk level**: Low-Medium
-- Design changes require find-replace across many files rather than a single token update
-- No single source of truth for the palette in code
+This creates two parallel inline-style palettes co-existing in the codebase until all inner pages are migrated.
+
+**Why it happened**: Inline styles provided immediate override control; a token system would require a larger refactor.
+
+**Risk level**: Medium (now elevated due to two conflicting palettes in the codebase)
+- Finding all dark hex values for a future full migration requires grep across all files
+- No single source of truth for either palette
+- A developer editing an inner page may accidentally copy dark hex codes from nearby components
 
 **Recommended fix**:
-Create `frontend/src/styles/tokens.ts`:
+Create `frontend/src/styles/tokens.ts` with the light palette as canonical:
 ```typescript
 export const tokens = {
-  bg: { base: '#000000', elevated: '#0A0A0A', surface: '#111111', card: '#1C1C1C' },
-  border: { subtle: '#1F1F1F', default: '#2A2A2A', emphasis: '#3F3F46' },
-  text: { primary: '#FFFFFF', secondary: '#A1A1AA', tertiary: '#71717A', muted: '#52525B', disabled: '#3F3F46' },
+  bg: { base: '#FFFFFF', subtle: '#F9FAFB', muted: '#F3F4F6', accent: '#000000' },
+  border: { default: '#E5E7EB', subtle: '#F3F4F6' },
+  text: { primary: '#000000', secondary: '#374151', muted: '#6B7280', disabled: '#9CA3AF' },
+  status: { success: '#16A34A', error: '#DC2626' },
 };
 ```
-Then import and use `tokens.text.muted` instead of `'#52525B'` everywhere.
+Then migrate inner pages (Compare, Analytics, Property, Map, Locality) to use these tokens instead of hardcoded dark hex values.
 
 ---
 
@@ -164,3 +174,23 @@ The Maps API key is fetched from `/api/v1/auth/google/config` on every MapView c
 
 **Recommended fix**:
 Set `staleTime: Infinity` in the React Query config for the API key fetch, or use Zustand to cache the key in `mapsApiKey` after the first successful fetch (already in the store — just needs the caching logic wired up).
+
+---
+
+## Shortcut #8 — mockScores / mockMetrics Still Used in Analytics and Compare
+
+**Change reference**: Change #16
+
+**What happened**:
+During the light theme conversion, `mockScores` and `mockMetrics` were retained in two places:
+- `frontend/src/pages/Analytics/index.tsx` — yield tab uses `mockMetrics[l.id].rental_yield_estimate`; rankings tab uses `mockScores[l.id].investment_score`, `connectivity_score`, etc.
+- `frontend/src/pages/Compare/index.tsx` — passes `mockScores` to `PropertyComparisonTable` for connectivity and lifestyle scores
+
+**Why it happened**: Real locality scores and metrics require per-locality API calls (`useLocalityScores(id)`, `useLocalityMetrics(id)`). The Analytics page aggregates across all localities, and no batch endpoint exists yet. Wiring this up was deferred to avoid scope creep during the theme conversion task.
+
+**Risk level**: Low
+- Data shown (scores, yields) is plausible but not live from the database
+- No crash risk; mock data is always present
+
+**Recommended fix**:
+Add a `GET /api/v1/localities/scores/all` batch endpoint on the backend, or fetch individual locality scores in parallel using `Promise.all`. Pass the results as props to Analytics and Compare pages and remove the mock imports.

@@ -114,3 +114,18 @@ The `useAmenities()` hook in `frontend/src/hooks/useApi.ts` called the amenity s
 - **Preventative action**:
   1. Generate an OpenAPI spec from each microservice and validate `useApi.ts` hook URLs against the spec in CI (using a schema diff tool or contract testing)
   2. Log the actual HTTP status code in the `useApi.ts` catch blocks so 422 errors are distinguishable from network failures in the browser console
+
+---
+
+## Incident — 2026-06-15: MongoDB IndexOptionsConflict Blocking Backend Startup
+
+### 1. What happened?
+Backend startup crashed with `pymongo.errors.OperationFailure: Index with name: idx_properties_text_search already exists with different options`. The existing text index was created with a `description` field weight; the new code attempted to create the same-named index with `ai_description` instead.
+
+- **Root cause**: The prior index definition included `description` in the text fields. After the AI description field was renamed to `ai_description`, the index recreation was added without first dropping the conflicting old index. MongoDB does not allow redefining an existing index's options.
+- **Detection method**: Backend log output on startup showing error code 85 (`IndexOptionsConflict`).
+- **Resolution**: Added a `try/except` block in `backend/main.py` lifespan startup to drop `idx_properties_text_search` before recreating it with the correct fields (`title`, `locality_name`, `ai_description`).
+- **Time to resolution**: Immediate once root cause identified
+- **Preventative action**:
+  1. When renaming indexed fields, always include a corresponding index drop/recreate migration step
+  2. Add a startup health check or migration script that validates index field names match the current data model before accepting traffic

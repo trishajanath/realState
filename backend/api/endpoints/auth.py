@@ -1,102 +1,138 @@
 import urllib.parse
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+import jwt
 from fastapi import APIRouter, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 import httpx
+from pydantic import BaseModel, EmailStr, field_validator
 
 from core.config import settings
 from core.logging import logger
 
 router = APIRouter()
 
+
+# ── JWT helpers ──────────────────────────────────────────────────────────────
+
+def create_access_token(email: str, name: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(hours=settings.JWT_EXPIRE_HOURS)
+    payload = {
+        "sub": email,
+        "name": name,
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+# ── Email/Password login ──────────────────────────────────────────────────────
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def email_must_be_valid(cls, v: str) -> str:
+        v = v.strip().lower()
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("Invalid email address")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def password_not_empty(cls, v: str) -> str:
+        if not v or len(v) < 1:
+            raise ValueError("Password is required")
+        return v
+
+
+@router.post("/login")
+async def login(body: LoginRequest):
+    """
+    Email/password login. Accepts any valid email with a non-empty password
+    and issues a signed JWT. Replace with real user DB check when ready.
+    """
+    name = body.email.split("@")[0]
+    token = create_access_token(email=body.email, name=name)
+    logger.info("User logged in", email=body.email)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {"email": body.email, "name": name},
+    }
+
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+
 @router.get("/google/config")
 async def get_google_config():
-    """
-    Returns Google OAuth Client and Maps configurations to the frontend.
-    """
     return {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "callback_url": settings.GOOGLE_CALLBACK_URL,
-        "maps_api_key": settings.GOOGLE_GEOCODING_API_KEY
+        "maps_api_key": settings.GOOGLE_GEOCODING_API_KEY,
     }
 
+
 async def handle_oauth_callback(request: Request):
-    """
-    Exchanges the authorization code for access tokens, fetches user profile,
-    and redirects user back to the frontend with token credentials.
-    """
     code = request.query_params.get("code")
     error = request.query_params.get("error")
-
-    frontend_login_url = "http://localhost:5173/login"
+    frontend_login_url = f"{settings.FRONTEND_URL}/login"
 
     if error:
-        logger.error("OAuth Authorization failed from Google Consent Screen", error=error)
+        logger.error("OAuth Authorization failed", error=error)
         err_msg = urllib.parse.quote(f"Google authentication failed: {error}")
         return RedirectResponse(url=f"{frontend_login_url}?error={err_msg}")
 
     if not code:
-        logger.error("OAuth Callback invoked without authorization code")
+        logger.error("OAuth Callback missing authorization code")
         err_msg = urllib.parse.quote("Authentication failed: No authorization code was returned.")
         return RedirectResponse(url=f"{frontend_login_url}?error={err_msg}")
 
-    # Exchange code for tokens
     try:
         async with httpx.AsyncClient() as client:
-            token_url = "https://oauth2.googleapis.com/token"
-            data = {
-                "code": code,
-                "client_id": settings.GOOGLE_CLIENT_ID,
-                "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "redirect_uri": settings.GOOGLE_CALLBACK_URL,
-                "grant_type": "authorization_code"
-            }
-            logger.info("Exchanging code for Google access token", redirect_uri=settings.GOOGLE_CALLBACK_URL)
-            token_res = await client.post(token_url, data=data)
-            
+            token_res = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": settings.GOOGLE_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": settings.GOOGLE_CALLBACK_URL,
+                    "grant_type": "authorization_code",
+                },
+            )
             if token_res.status_code != 200:
-                logger.error(
-                    "Google token exchange failed", 
-                    status_code=token_res.status_code, 
-                    resp_body=token_res.text
-                )
+                logger.error("Google token exchange failed", status_code=token_res.status_code)
                 err_msg = urllib.parse.quote("Failed to retrieve authentication tokens from Google.")
                 return RedirectResponse(url=f"{frontend_login_url}?error={err_msg}")
-            
+
             tokens = token_res.json()
             access_token = tokens.get("access_token")
-            
             if not access_token:
-                logger.error("No access token present in token exchange response")
                 err_msg = urllib.parse.quote("Authentication tokens are missing from response.")
                 return RedirectResponse(url=f"{frontend_login_url}?error={err_msg}")
-                
-            # Fetch user profile details
-            user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
-            headers = {"Authorization": f"Bearer {access_token}"}
-            user_res = await client.get(user_info_url, headers=headers)
-            
+
+            user_res = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
             if user_res.status_code != 200:
-                logger.error("Failed to fetch Google user profile details", status_code=user_res.status_code)
                 err_msg = urllib.parse.quote("Failed to fetch user details from Google.")
                 return RedirectResponse(url=f"{frontend_login_url}?error={err_msg}")
-                
+
             user_info = user_res.json()
-            email = user_info.get("email")
+            email = user_info.get("email", "")
             name = user_info.get("name") or email.split("@")[0]
-            
-            logger.info("Successfully authenticated Google user", email=email)
-            
-            # Generate a mock JWT for the session and redirect back to frontend
-            mock_jwt = f"mock_google_oauth_token_{urllib.parse.quote(email)}"
-            url_params = urllib.parse.urlencode({
-                "token": mock_jwt,
-                "username": name,
-                "email": email
-            })
-            
+
+            logger.info("Google OAuth successful", email=email)
+            signed_jwt = create_access_token(email=email, name=name)
+
+            url_params = urllib.parse.urlencode({"token": signed_jwt, "username": name, "email": email})
             return RedirectResponse(url=f"{frontend_login_url}?{url_params}")
-            
-    except Exception as e:
-        logger.exception("Unexpected error during Google OAuth callback processing")
+
+    except Exception:
+        logger.exception("Unexpected error during Google OAuth callback")
         err_msg = urllib.parse.quote("An unexpected error occurred during Google sign in.")
         return RedirectResponse(url=f"{frontend_login_url}?error={err_msg}")

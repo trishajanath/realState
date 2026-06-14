@@ -17,10 +17,10 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
 ];
 
 const tooltipStyle = {
-  background: '#0A0A0A',
-  color: '#FFFFFF',
+  background: '#FFFFFF',
+  color: '#000000',
   borderRadius: '8px',
-  border: '1px solid #2A2A2A',
+  border: '1px solid #E5E7EB',
   fontSize: '12px',
 };
 
@@ -71,15 +71,22 @@ export const AnalyticsPage: React.FC = () => {
     { label: 'Active Inventory', value: '715 units', note: '7 active sectors' },
   ];
 
+  const statusColor = (s: string) => {
+    if (s === 'Completed') return { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0' };
+    if (s === 'Approved') return { bg: '#EFF6FF', text: '#1D4ED8', border: '#BFDBFE' };
+    if (s === 'In Progress') return { bg: '#FFFBEB', text: '#B45309', border: '#FDE68A' };
+    return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB' };
+  };
+
   return (
     <div className="flex-1 p-8 max-w-[1600px] mx-auto w-full">
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold" style={{ color: '#FFFFFF', letterSpacing: '-0.03em' }}>
+        <h1 className="text-3xl font-bold" style={{ color: '#000000', letterSpacing: '-0.03em' }}>
           Analytics
         </h1>
-        <p className="text-sm mt-1" style={{ color: '#71717A' }}>
+        <p className="text-sm mt-1" style={{ color: '#6B7280' }}>
           Comparative price indices, yield matrices, and infrastructure timelines
         </p>
       </div>
@@ -88,18 +95,15 @@ export const AnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
         {summaryStats.map((s) => (
           <div key={s.label} className="flex flex-col gap-0.5">
-            <span className="text-xs uppercase tracking-wider" style={{ color: '#52525B' }}>{s.label}</span>
-            <span className="text-2xl font-semibold" style={{ color: '#FFFFFF' }}>{s.value}</span>
-            <span className="text-xs" style={{ color: '#71717A' }}>{s.note}</span>
+            <span className="text-xs uppercase tracking-wider" style={{ color: '#9CA3AF' }}>{s.label}</span>
+            <span className="text-2xl font-semibold" style={{ color: '#000000' }}>{s.value}</span>
+            <span className="text-xs" style={{ color: '#6B7280' }}>{s.note}</span>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div
-        className="flex gap-0 mb-8"
-        style={{ borderBottom: '1px solid #1F1F1F' }}
-      >
+      <div className="flex gap-0 mb-8" style={{ borderBottom: '1px solid #E5E7EB' }}>
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
@@ -109,15 +113,15 @@ export const AnalyticsPage: React.FC = () => {
               onClick={() => setActiveTab(tab.key)}
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative"
               style={{
-                color: active ? '#FFFFFF' : '#71717A',
-                borderBottom: active ? '1px solid #FFFFFF' : '1px solid transparent',
+                color: active ? '#000000' : '#6B7280',
+                borderBottom: active ? '2px solid #000000' : '2px solid transparent',
                 marginBottom: '-1px',
               }}
               onMouseEnter={(e) => {
-                if (!active) (e.currentTarget as HTMLElement).style.color = '#A1A1AA';
+                if (!active) (e.currentTarget as HTMLElement).style.color = '#374151';
               }}
               onMouseLeave={(e) => {
-                if (!active) (e.currentTarget as HTMLElement).style.color = '#71717A';
+                if (!active) (e.currentTarget as HTMLElement).style.color = '#6B7280';
               }}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -131,22 +135,22 @@ export const AnalyticsPage: React.FC = () => {
       {activeTab === 'trends' && (
         <div>
           <div className="mb-4">
-            <h2 className="text-sm font-medium" style={{ color: '#A1A1AA' }}>
+            <h2 className="text-sm font-medium" style={{ color: '#6B7280' }}>
               Price appreciation path (INR/sqft) · 4-year view
             </h2>
           </div>
           <div style={{ height: '320px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={priceTrendsData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#111111" strokeDasharray="0" />
-                <XAxis dataKey="year" stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} width={60} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#2A2A2A' }} />
-                <Legend wrapperStyle={{ fontSize: 11, color: '#71717A' }} />
-                <Line type="monotone" dataKey="Saravanampatti" stroke="#FFFFFF" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="Peelamedu" stroke="#A1A1AA" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="RSPuram" stroke="#71717A" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="Kalapatti" stroke="#52525B" strokeWidth={1.5} dot={false} />
+                <CartesianGrid stroke="#F3F4F6" strokeDasharray="0" />
+                <XAxis dataKey="year" stroke="#E5E7EB" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#9CA3AF' }} />
+                <YAxis stroke="#E5E7EB" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#9CA3AF' }} width={60} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#E5E7EB' }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: '#6B7280' }} />
+                <Line type="monotone" dataKey="Saravanampatti" stroke="#2563EB" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="Peelamedu" stroke="#10B981" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="RSPuram" stroke="#7C3AED" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="Kalapatti" stroke="#F59E0B" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -157,18 +161,18 @@ export const AnalyticsPage: React.FC = () => {
       {activeTab === 'yields' && (
         <div>
           <div className="mb-4">
-            <h2 className="text-sm font-medium" style={{ color: '#A1A1AA' }}>
+            <h2 className="text-sm font-medium" style={{ color: '#6B7280' }}>
               Annualized rental yield (%) by micro-sector
             </h2>
           </div>
           <div style={{ height: '320px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={yieldData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#111111" strokeDasharray="0" vertical={false} />
-                <XAxis dataKey="name" stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#3F3F46" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#111111' }} />
-                <Bar dataKey="yield" fill="#FFFFFF" radius={[2, 2, 0, 0]} maxBarSize={48} />
+                <CartesianGrid stroke="#F3F4F6" strokeDasharray="0" vertical={false} />
+                <XAxis dataKey="name" stroke="#E5E7EB" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#9CA3AF' }} />
+                <YAxis stroke="#E5E7EB" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: '#9CA3AF' }} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#F9FAFB' }} />
+                <Bar dataKey="yield" fill="#000000" radius={[2, 2, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -178,13 +182,12 @@ export const AnalyticsPage: React.FC = () => {
       {/* Tab: Infrastructure */}
       {activeTab === 'infra' && (
         <div className="space-y-0">
-          {/* Table header */}
           <div
             className="grid gap-4 px-0 py-2 text-xs uppercase tracking-wider"
             style={{
               gridTemplateColumns: '2fr 160px 100px 80px',
-              color: '#52525B',
-              borderBottom: '1px solid #1F1F1F',
+              color: '#9CA3AF',
+              borderBottom: '1px solid #E5E7EB',
             }}
           >
             <span>Project</span>
@@ -199,35 +202,35 @@ export const AnalyticsPage: React.FC = () => {
                 style={{ gridTemplateColumns: '2fr 160px 100px 80px' }}
               >
                 <div>
-                  <div className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                  <div className="text-sm font-medium" style={{ color: '#000000' }}>
                     {item.title}
                   </div>
-                  <p className="text-xs mt-1 leading-relaxed" style={{ color: '#71717A' }}>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>
                     {item.impact}
                   </p>
                 </div>
-                <span className="text-sm self-start pt-0.5" style={{ color: '#A1A1AA' }}>
+                <span className="text-sm self-start pt-0.5" style={{ color: '#374151' }}>
                   {item.phase}
                 </span>
                 <div className="flex items-start gap-1 self-start pt-0.5">
-                  <Calendar className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#52525B' }} />
-                  <span className="text-sm" style={{ color: '#A1A1AA' }}>{item.date}</span>
+                  <Calendar className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#9CA3AF' }} />
+                  <span className="text-sm" style={{ color: '#374151' }}>{item.date}</span>
                 </div>
                 <div className="self-start pt-0.5">
-                  <span
-                    className="text-xs px-2 py-0.5 rounded"
-                    style={{
-                      backgroundColor: '#111111',
-                      color: item.status === 'Completed' ? '#FFFFFF' : '#A1A1AA',
-                      border: '1px solid #1F1F1F',
-                    }}
-                  >
-                    {item.status}
-                  </span>
+                  {(() => {
+                    const c = statusColor(item.status);
+                    return (
+                      <span className="text-xs px-2 py-0.5 rounded font-medium"
+                        style={{ backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}` }}
+                      >
+                        {item.status}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
               {idx < infraItems.length - 1 && (
-                <div style={{ height: '1px', backgroundColor: '#111111' }} />
+                <div style={{ height: '1px', backgroundColor: '#F3F4F6' }} />
               )}
             </div>
           ))}
@@ -241,8 +244,8 @@ export const AnalyticsPage: React.FC = () => {
             className="grid gap-4 py-2 text-xs uppercase tracking-wider"
             style={{
               gridTemplateColumns: '24px 1fr 100px 100px 100px 100px 120px',
-              color: '#52525B',
-              borderBottom: '1px solid #1F1F1F',
+              color: '#9CA3AF',
+              borderBottom: '1px solid #E5E7EB',
             }}
           >
             <span>#</span>
@@ -260,37 +263,33 @@ export const AnalyticsPage: React.FC = () => {
                 className="grid gap-4 py-3 transition-colors duration-150 cursor-default"
                 style={{
                   gridTemplateColumns: '24px 1fr 100px 100px 100px 100px 120px',
-                  borderBottom: idx < rankingData.length - 1 ? '1px solid #111111' : 'none',
+                  borderBottom: idx < rankingData.length - 1 ? '1px solid #F3F4F6' : 'none',
                 }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.backgroundColor = '#0A0A0A')
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')
-                }
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#F9FAFB')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = 'transparent')}
               >
-                <span className="text-xs" style={{ color: '#52525B' }}>
+                <span className="text-xs" style={{ color: '#9CA3AF' }}>
                   {idx + 1}
                 </span>
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#52525B' }} />
-                  <span className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#9CA3AF' }} />
+                  <span className="text-sm font-medium" style={{ color: '#000000' }}>
                     {item.name}
                   </span>
                 </div>
-                <span className="text-sm font-semibold" style={{ color: '#FFFFFF' }}>
+                <span className="text-sm font-semibold" style={{ color: '#000000' }}>
                   {item.invest.toFixed(1)}%
                 </span>
-                <span className="text-sm" style={{ color: '#A1A1AA' }}>
+                <span className="text-sm" style={{ color: '#374151' }}>
                   {item.safety.toFixed(1)}%
                 </span>
-                <span className="text-sm" style={{ color: '#A1A1AA' }}>
+                <span className="text-sm" style={{ color: '#374151' }}>
                   {item.connect.toFixed(1)}%
                 </span>
-                <span className="text-sm" style={{ color: '#A1A1AA' }}>
+                <span className="text-sm" style={{ color: '#374151' }}>
                   {item.livability.toFixed(1)}%
                 </span>
-                <span className="text-sm font-medium text-right" style={{ color: '#FFFFFF' }}>
+                <span className="text-sm font-medium text-right" style={{ color: '#000000' }}>
                   ₹{item.price.toLocaleString()}
                 </span>
               </div>

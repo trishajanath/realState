@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str = "realstate_mongo"
 
     # AI API Configurations
-    GEMINI_API_KEY: str = "AIzaSyAiBqZYGV4IF1SrRiB3MWohwA55oFhfEtg"
+    GEMINI_API_KEY: str = ""
     GOOGLE_GEOCODING_API_KEY: Optional[str] = None
 
     # Google OAuth Configurations
@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: Optional[str] = None
     GOOGLE_CALLBACK_URL: Optional[str] = None
     GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+
+    # Auth / JWT
+    JWT_SECRET_KEY: str = "dev_secret_change_in_production_32chars_min"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_HOURS: int = 24
+
+    # Frontend origin (used for OAuth redirect and CORS)
+    FRONTEND_URL: str = "http://localhost:5173"
 
     @property
     def postgres_async_url(self) -> str:

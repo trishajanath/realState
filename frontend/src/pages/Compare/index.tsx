@@ -11,7 +11,7 @@ export const ComparePage: React.FC = () => {
   const { data: properties } = useProperties();
   const { data: localities } = useLocalities();
 
-  const comparedProperties = properties?.filter((p) => selectedIds.includes(p.id)) || [];
+  const comparedProperties = properties?.results?.filter((p) => selectedIds.includes(p.id)) || [];
 
   const formatPrice = (p: number) =>
     p >= 10000000 ? `₹${(p / 10000000).toFixed(2)} Cr` : `₹${(p / 100000).toFixed(1)} L`;
@@ -22,10 +22,10 @@ export const ComparePage: React.FC = () => {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#FFFFFF', letterSpacing: '-0.03em' }}>
+          <h1 className="text-3xl font-bold" style={{ color: '#000000', letterSpacing: '-0.03em' }}>
             Compare
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#71717A' }}>
+          <p className="text-sm mt-1" style={{ color: '#6B7280' }}>
             Side-by-side property specification analysis · Up to 4 listings
           </p>
         </div>
@@ -33,9 +33,9 @@ export const ComparePage: React.FC = () => {
           <button
             onClick={clear}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded transition-colors"
-            style={{ color: '#71717A', border: '1px solid #1F1F1F' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#111111'; (e.currentTarget as HTMLElement).style.color = '#FFFFFF'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#71717A'; }}
+            style={{ color: '#6B7280', border: '1px solid #E5E7EB' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#000000'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#6B7280'; }}
           >
             <X className="w-3.5 h-3.5" />
             Clear All
@@ -48,22 +48,22 @@ export const ComparePage: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div
             className="flex items-center justify-center rounded mb-6"
-            style={{ width: '56px', height: '56px', backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}
+            style={{ width: '56px', height: '56px', backgroundColor: '#F3F4F6', border: '1px solid #E5E7EB' }}
           >
-            <ArrowLeftRight className="w-6 h-6" style={{ color: '#52525B' }} />
+            <ArrowLeftRight className="w-6 h-6" style={{ color: '#9CA3AF' }} />
           </div>
-          <h3 className="text-base font-semibold mb-2" style={{ color: '#FFFFFF' }}>
+          <h3 className="text-base font-semibold mb-2" style={{ color: '#000000' }}>
             No properties selected
           </h3>
-          <p className="text-sm mb-6 max-w-sm" style={{ color: '#71717A' }}>
+          <p className="text-sm mb-6 max-w-sm" style={{ color: '#6B7280' }}>
             Browse listings and click "Compare" on any property card to add it here.
           </p>
           <Link
             to="/map"
             className="flex items-center gap-2 text-sm px-4 py-2 rounded font-medium transition-colors"
-            style={{ backgroundColor: '#FFFFFF', color: '#000000' }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#D4D4D4')}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#FFFFFF')}
+            style={{ backgroundColor: '#000000', color: '#FFFFFF' }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#1F2937')}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.backgroundColor = '#000000')}
           >
             Browse Properties
           </Link>
@@ -83,22 +83,22 @@ export const ComparePage: React.FC = () => {
                 <div
                   key={prop.id}
                   className="p-4 rounded"
-                  style={{ backgroundColor: '#0A0A0A', border: '1px solid #1F1F1F' }}
+                  style={{ backgroundColor: '#F9FAFB', border: '1px solid #E5E7EB' }}
                 >
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <Link
                       to={`/property/${prop.id}`}
                       className="text-sm font-medium leading-snug hover:underline"
-                      style={{ color: '#FFFFFF' }}
+                      style={{ color: '#000000' }}
                     >
                       {prop.title}
                     </Link>
                     <button
                       onClick={() => removeId(prop.id)}
                       className="p-1 rounded flex-shrink-0 transition-colors"
-                      style={{ color: '#52525B' }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#FFFFFF')}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#52525B')}
+                      style={{ color: '#9CA3AF' }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#000000')}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#9CA3AF')}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -108,10 +108,10 @@ export const ComparePage: React.FC = () => {
                       <img src={prop.images[0]} alt={prop.title} className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <div className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                  <div className="text-lg font-bold" style={{ color: '#000000' }}>
                     {formatPrice(prop.price)}
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: '#71717A' }}>
+                  <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
                     {locality?.name} · {prop.listing_type}
                   </div>
                 </div>
@@ -134,20 +134,19 @@ export const ComparePage: React.FC = () => {
               className="grid gap-4"
               style={{
                 gridTemplateColumns: `200px repeat(${comparedProperties.length}, 1fr)`,
-                borderBottom: '1px solid #111111',
+                borderBottom: '1px solid #F3F4F6',
                 padding: '12px 0',
               }}
             >
-              <span className="text-xs self-center" style={{ color: '#52525B' }}>{row.label}</span>
+              <span className="text-xs self-center" style={{ color: '#9CA3AF' }}>{row.label}</span>
               {comparedProperties.map((prop) => (
-                <span key={prop.id} className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                <span key={prop.id} className="text-sm font-medium" style={{ color: '#000000' }}>
                   {row.getValue(prop)}
                 </span>
               ))}
             </div>
           ))}
 
-          {/* Also show the PropertyComparisonTable if available */}
           {comparedProperties.length >= 2 && (
             <div className="mt-8">
               <PropertyComparisonTable

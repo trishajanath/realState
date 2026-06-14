@@ -129,3 +129,34 @@ The Google OAuth 2.0 backend callback (`/auth/google/callback`) was implemented 
 
 ### 8. Is this a repeat pattern?
 * **Yes** — same class as Incident 3 (marking incomplete work as done with reduced-scope verification).
+
+---
+
+## Incident 6: Partial Theme Migration — Mixed Dark/Light UI After XVERTA Rebrand
+
+### 1. What happened?
+Change #16 migrated the global CSS, AppLayout, Home, Login, and Signup pages to a light theme (white backgrounds, black text). However, the inner dashboard pages — Compare, Analytics, Property, Map, and Locality — still carry dark inline styles (`#000000` backgrounds, `#FFFFFF` text). This creates a mixed visual experience where the shell and landing area are light but navigating deeper into the app reveals dark pages.
+
+### Category
+**Governance Problem** — the scope of the theme migration was not defined end-to-end before implementation. The change was applied to the entry-point pages only, leaving the inner pages inconsistent.
+
+### 2. Could approval have prevented it?
+* **Yes.** A product owner reviewing a scope document ("which pages will be migrated in this change?") would have either approved the incremental approach or expanded the scope to include all pages before marking the task complete.
+
+### 3. Could policy enforcement have prevented it?
+* **Yes.** A policy stating "design system changes affecting global CSS must be applied to all pages in the same PR" would have forced a complete migration or a deliberate feature-flag/scoped-CSS approach.
+
+### 4. Could blast-radius analysis have prevented it?
+* **Yes.** Identifying that `index.css` changes affect all pages globally, while inline styles on inner pages would override them partially, would have surfaced the mixed-theme outcome before implementation.
+
+### 5. Could runtime verification have prevented it?
+* **Yes.** A visual regression test (screenshot diff against all routes) would have immediately flagged the color inconsistency on Compare, Analytics, Property, Map, and Locality pages.
+
+### 6. Could a second agent have detected it?
+* **Yes.** A QA agent navigating through all 7 routes would have reported the dark inner pages immediately after the theme change.
+
+### 7. Could automated governance have helped?
+* **Yes.** A CI step that runs a headless browser screenshot across all routes and diffs against an approved baseline would catch mixed-theme regressions on every PR touching `index.css`.
+
+### 8. Is this a repeat pattern?
+* **Partially new.** This is the first design-system-scope gap. However, the root cause (incomplete scope definition before implementation) is the same class as Incident 3 and Incident 5.

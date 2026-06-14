@@ -28,10 +28,8 @@ class AIService:
             ]
         }
         
-        # If API key is not configured or placeholder, skip API call
-        if not self.api_key or "secure" in self.api_key or self.api_key == "AIzaSyDC_Obdu6DGqdB_x3YqOrz8KXi8Lmd6Zzc":
-            # Avoid leaking key errors in logs if placeholder key is used in development/tests
-            logger.warning("Gemini API key is not configured or using default placeholder. Skipping AI enrichment.")
+        if not self.api_key:
+            logger.warning("GEMINI_API_KEY not configured. Skipping AI enrichment.")
             return None
 
         try:
