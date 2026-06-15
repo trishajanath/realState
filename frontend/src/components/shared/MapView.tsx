@@ -50,20 +50,22 @@ export const MapView: React.FC<MapViewProps> = ({
   // Zustand States
   const store = useMapFilterStore();
   
-  // Fetch dynamic database data
-  const { data: properties } = useProperties();
+  // Fetch dynamic database data — request up to 100 so the map shows all listings
+  const { data: propertiesResult } = useProperties({ limit: 100 });
   const { data: localities } = useLocalities();
 
-  const allProperties = properties || mockProperties;
+  const allProperties = propertiesResult?.results || mockProperties;
   const allLocalities = localities || mockLocalities;
   
   // Loading, Fallback & Error states
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Seed from store so remounts after SPA navigation don't require a fresh fetch
+  const [apiKey, setApiKey] = useState<string | null>(store.mapsApiKey);
+  // If Maps SDK is already loaded (SPA remount), start in loaded state immediately
+  const [isLoaded, setIsLoaded] = useState(() => !!(window as any).google?.maps);
   const [loadError, setLoadError] = useState<string | null>(null);
   const useMockFallback = store.useMockFallback;
   
-  const [mapZoom, setMapZoom] = useState(12);
+  const [mapZoom, setMapZoom] = useState(11);
   const [localityStats, setLocalityStats] = useState<any | null>(null);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
 
@@ -81,19 +83,21 @@ export const MapView: React.FC<MapViewProps> = ({
   const svgHeight = 500;
 
   const latToY = (lat: number | undefined | null) => {
-    const minLat = 10.99;
-    const maxLat = 11.09;
-    const l = lat || 11.02;
+    // Range covers full Coimbatore: Vadavalli south (10.96) to Thudiyalur north (11.10)
+    const minLat = 10.96;
+    const maxLat = 11.10;
+    const l = lat || 11.04;
     const y = ((maxLat - l) / (maxLat - minLat)) * svgHeight;
-    return Math.max(30, Math.min(svgHeight - 30, y));
+    return Math.max(20, Math.min(svgHeight - 20, y));
   };
 
   const lonToX = (lon: number | undefined | null) => {
-    const minLon = 76.93;
-    const maxLon = 77.05;
-    const l = lon || 77.00;
+    // Range covers full Coimbatore: Vadavalli west (76.88) to Kalapatti east (77.07)
+    const minLon = 76.88;
+    const maxLon = 77.07;
+    const l = lon || 76.99;
     const x = ((l - minLon) / (maxLon - minLon)) * svgWidth;
-    return Math.max(30, Math.min(svgWidth - 30, x));
+    return Math.max(20, Math.min(svgWidth - 20, x));
   };
 
   // 1. Synchronize local loadError state when fallback is engaged globally
@@ -147,7 +151,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
       const existingScript = document.getElementById('google-maps-sdk');
       if (existingScript) {
-        existingScript.addEventListener('load', () => setIsLoaded(true));
+        // Script already injected — Maps may already be ready or still initializing
+        if (win.google?.maps) {
+          setIsLoaded(true);
+        } else {
+          // Refresh the gm_init callback so this remount picks it up
+          win.gm_init = () => setIsLoaded(true);
+        }
         return;
       }
 
@@ -176,7 +186,8 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const startTime = performance.now();
     try {
-      const coimbatoreCenter = { lat: 11.0168, lng: 76.9558 };
+      // Center between western neighbourhoods (RS Puram ~76.94) and eastern IT belt (Saravanampatti ~77.00)
+      const coimbatoreCenter = { lat: 11.04, lng: 76.99 };
       
       const map = new google.maps.Map(mapContainerRef.current, {
         center: coimbatoreCenter,
@@ -893,6 +904,9 @@ export const MapView: React.FC<MapViewProps> = ({
       if (commuteCircleRef.current) commuteCircleRef.current.setMap(null);
       if (commuteMarkerRef.current) commuteMarkerRef.current.setMap(null);
       if (directionsRendererRef.current) directionsRendererRef.current.setMap(null);
+      // Null out the map ref so re-mounting the component creates a fresh Map instance
+      // on the new DOM container (without this, the stale ref blocks re-initialization)
+      mapRef.current = null;
     };
   }, []);
 

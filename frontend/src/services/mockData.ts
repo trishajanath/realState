@@ -1,4 +1,4 @@
-import type { Property, Locality, LocalityMetrics, LocalityScores, RecommendationItem, Amenity } from '../types';
+import type { Property, Locality, LocalityMetrics, LocalityScores, RecommendationItem, Amenity } from '../types'; // Amenity kept for mockAmenities type annotation
 
 export const mockLocalities: Locality[] = [
   { id: '1a7a2e0a-3a5f-4a0b-8532-3ea17bc521f3', name: 'Saravanampatti', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0797, longitude: 77.0011 },
@@ -7,7 +7,10 @@ export const mockLocalities: Locality[] = [
   { id: '4d7a2e0d-3d5f-4d0b-8535-3ea17bc521f6', name: 'Singanallur', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0016, longitude: 77.0264 },
   { id: '5e7a2e0e-3e5f-4e0b-8536-3ea17bc521f7', name: 'Saibaba Colony', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0213, longitude: 76.9458 },
   { id: '6f7a2e0f-3f5f-4f0b-8537-3ea17bc521f8', name: 'RS Puram', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0112, longitude: 76.9458 },
-  { id: '7g7a2e0g-3g5f-4g0b-8538-3ea17bc521f9', name: 'Gandhipuram', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0183, longitude: 76.9691 }
+  { id: '7g7a2e0g-3g5f-4g0b-8538-3ea17bc521f9', name: 'Gandhipuram', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0183, longitude: 76.9691 },
+  { id: '8b8a2e0b-4b5f-4b0b-8539-3ea17bc521fa', name: 'Vadavalli', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 10.9895, longitude: 76.9183 },
+  { id: '9c9a2e0c-4c5f-4c0b-853a-3ea17bc521fb', name: 'Thudiyalur', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 11.0658, longitude: 77.0228 },
+  { id: '0d0a2e0d-4d5f-4d0b-853b-3ea17bc521fc', name: 'Ondipudur', city: 'Coimbatore', state: 'Tamil Nadu', latitude: 10.9952, longitude: 77.0264 },
 ];
 
 export const mockScores: Record<string, LocalityScores> = {
@@ -153,23 +156,8 @@ export const mockProperties: Property[] = [
   }
 ];
 
-export const mockAmenities: Record<string, Amenity[]> = {
-  '1a7a2e0a-3a5f-4a0b-8532-3ea17bc521f3': [
-    { id: 'a1', name: 'SNS Academy School', category: 'school', latitude: 11.0821, longitude: 77.0045, address: 'Sathy Rd, Saravanampatti', confidence_score: 0.95 },
-    { id: 'a2', name: 'Vimal Jyothi Convent School', category: 'school', latitude: 11.0768, longitude: 76.9958, address: 'Saravanampatti', confidence_score: 0.92 },
-    { id: 'a3', name: 'Geetha Hospital', category: 'hospital', latitude: 11.0785, longitude: 77.0001, address: 'Saravanampatti Junction', confidence_score: 0.90 },
-    { id: 'a4', name: 'Barbeque Nation', category: 'restaurant', latitude: 11.0805, longitude: 77.0025, address: 'Chil SEZ Road, Saravanampatti', confidence_score: 0.98 },
-    { id: 'a5', name: 'Sathy Road Central Park', category: 'park', latitude: 11.0745, longitude: 76.9989, address: 'Sathy Road', confidence_score: 0.88 },
-    { id: 'a6', name: 'Gold\'s Gym', category: 'gym', latitude: 11.0811, longitude: 77.0019, address: 'Saravanampatti', confidence_score: 0.94 }
-  ],
-  '2b7a2e0b-3b5f-4b0b-8533-3ea17bc521f4': [
-    { id: 'a10', name: 'PSG Sarvajana School', category: 'school', latitude: 11.0254, longitude: 77.0012, address: 'Peelamedu', confidence_score: 0.99 },
-    { id: 'a11', name: 'GRG Matriculation School', category: 'school', latitude: 11.0312, longitude: 77.0045, address: 'Avinashi Road, Peelamedu', confidence_score: 0.98 },
-    { id: 'a12', name: 'PSG IMSR Hospitals', category: 'hospital', latitude: 11.0276, longitude: 77.0089, address: 'Avinashi Rd, Peelamedu', confidence_score: 0.99 },
-    { id: 'a13', name: 'Hopes Cafe & Grill', category: 'restaurant', latitude: 11.0334, longitude: 77.0051, address: 'Hopes College Road', confidence_score: 0.95 },
-    { id: 'a14', name: 'Codissia Park & Playground', category: 'park', latitude: 11.0398, longitude: 77.0211, address: 'Peelamedu', confidence_score: 0.97 }
-  ]
-};
+// Amenity data is fetched live from the API (OpenStreetMap via Overpass). No mock fallback.
+export const mockAmenities: Record<string, Amenity[]> = {};
 
 export const mockRecommendations: Record<string, Record<string, RecommendationItem[]>> = {
   '1a7a2e0a-3a5f-4a0b-8532-3ea17bc521f3': {

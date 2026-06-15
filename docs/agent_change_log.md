@@ -241,3 +241,78 @@ Records every non-trivial change implemented by AI agents. Governed by [.skills/
 | **Verification** | `npm run build` compiled cleanly. Scraper ingestion ran successfully (`python3 services/scraper/main.py` and `python3 services/scraper/ingest_to_db.py`). Frontend maps verified as rendering dynamic listings with correct coordinates. |
 | **Side effects** | None. All operations fall back gracefully if MongoDB Atlas connectivity fails. |
 | **Deployment impact** | **MEDIUM** — Database schema indexes updated and new collections populated. |
+
+---
+
+## [Change #17] — 2026-06-16: Fix Map Loading — Property Shape Mismatch, Script Race, Backend Seeding
+
+| Field | Detail |
+|---|---|
+| **Task** | Fix Google Maps not loading/showing properties; improve backend data availability |
+| **Why required** | `useProperties()` returns `PropertyListResult` but `MapView.tsx` and `Map/index.tsx` used the result directly as `Property[]`, crashing with `TypeError: .filter is not a function`. Default limit=20 truncated map data. Script loader race condition left map stuck on SPA re-mount. MongoDB `localities` collection was never seeded so locality API returned empty array. |
+| **Files modified** | `frontend/src/components/shared/MapView.tsx`, `frontend/src/pages/Map/index.tsx`, `backend/main.py` |
+| **Blast radius** | Medium — map rendering corrected; backend now seeds 4 collections on startup |
+| **Rollback** | `git checkout HEAD -- frontend/src/components/shared/MapView.tsx frontend/src/pages/Map/index.tsx backend/main.py` |
+| **Verification** | `propertiesResult?.results` is an array; `.filter()` no longer throws. Locality API returns 7 localities. Script loader resolves immediately when Maps SDK already initialized. |
+| **Side effects** | Map now requests up to 100 properties on load. Startup seeds are idempotent (upsert by id). |
+| **Deployment impact** | **LOW** — Backend seeding is additive and idempotent. Frontend-only runtime fix otherwise. |
+
+---
+
+## [Change #18] — 2026-06-16: Map UX — Show All Modal + Coimbatore Centering
+
+| Field | Detail |
+|---|---|
+| **Task** | Replace cluttered sidebar property list with a Show All modal; fix map center/zoom |
+| **Why required** | Sidebar list wasted map space; map was centered at railway station (skewed west); no browse flow existed |
+| **Files modified** | `frontend/src/pages/Map/index.tsx`, `frontend/src/components/shared/MapView.tsx` |
+| **Blast radius** | Medium — Map page structurally rewritten; no API or data changes |
+| **Rollback** | `git checkout HEAD -- frontend/src/pages/Map/index.tsx frontend/src/components/shared/MapView.tsx` |
+| **Verification** | Modal opens with all filtered properties in 2-col grid; click selects + closes; map opens at (11.04, 76.99) zoom 11 |
+| **Side effects** | Sidebar narrowed 360→300px; Show All replaces old scroll list |
+| **Deployment impact** | None |
+
+---
+
+## [Change #19] — 2026-06-16: Map Sidebar Light Theme Conversion
+
+| Field | Detail |
+|---|---|
+| **Task** | Convert all sidebar color tokens from dark palette to XVERTA light theme |
+| **Why required** | Sidebar was the last component still using dark monochrome (`#000000` bg / `#FFFFFF` text) after the rest of the app was converted to light theme. Visually clashed with white AppLayout shell. |
+| **Files modified** | `frontend/src/pages/Map/index.tsx` |
+| **Blast radius** | Low — pure visual token changes; no logic, layout, or API changes |
+| **Rollback** | `git checkout HEAD -- frontend/src/pages/Map/index.tsx` |
+| **Verification** | Sidebar bg is `#FFFFFF`; text, badges, inputs, filter buttons, and empty state all use light-theme tokens; Show All button inverted to black-on-white CTA; PropertyListModal and map HUD stay dark |
+| **Side effects** | None — StreetViewModal and map HUD overlay intentionally remain dark |
+| **Deployment impact** | None |
+
+---
+
+## [Change #20] — 2026-06-16: UI Data Density Overhaul — Home, Locality, Analytics Pages
+
+| Field | Detail |
+|---|---|
+| **Task** | Surface all hidden `LocalityMetrics` data; make dashboard pages data-dense and professional |
+| **Why required** | UI was showing only 3 of 20+ available `LocalityMetrics` fields. KPI cards had no deltas, rankings table had 5 columns for 4 localities, the Locality page showed no density/transit/proximity data, Analytics rankings omitted lifestyle and yield columns. Design philosophy mandate: specificity over vibes, no empty space without data. |
+| **Files modified** | `frontend/src/pages/Home/index.tsx` — 6-KPI grid with delta badges, 9-col 7-locality rankings table, Market Signals section, enriched Infrastructure Pipeline, 6-stat bottom strip; `frontend/src/pages/Locality/index.tsx` — Market Snapshot (6 cells), Investment Profile score bars (6 dimensions), Amenity Density chips (6 categories/km²), Connectivity panel (railway/airport/bus terminal distances + highway score + key proximities), mock fallback for all fields; `frontend/src/pages/Analytics/index.tsx` — Rankings tab expanded to 9 columns (added Lifestyle + Yield%), Yield tab comparative table (gross/net/vs-baseline), Price Trends mini-summary table per locality |
+| **Blast radius** | Low — frontend-only visual rewrites; no API, routing, or auth changes. Mock fallbacks ensure pages render even when API fields are absent. |
+| **Rollback** | `git checkout HEAD -- frontend/src/pages/Home/index.tsx frontend/src/pages/Locality/index.tsx frontend/src/pages/Analytics/index.tsx` |
+| **Verification** | TypeScript compiles without errors. All sub-components (`KpiCard`, `LocalityTableRow`, `ScoreBar`, `DensityChip`, `TransitRow`) defined outside main component to avoid hooks-in-loops violations. Mock fallback chain `metricsApi \|\| mockMetrics[id]` verified. |
+| **Side effects** | `useLocalityAmenities` (nested endpoint) replaces top-level `useAmenities` on Locality page — semantically correct. `useRecommendations` hook now consumed (was imported but unused). |
+| **Deployment impact** | None |
+
+---
+
+## [Change #21] — 2026-06-16: Real Data Refactor — Overpass Amenities, RSS News, Expanded Projects
+
+| Field | Detail |
+|---|---|
+| **Task** | Replace all fake/mock data with real scraped data: live OpenStreetMap POIs, real Coimbatore property projects, real infrastructure news from The Hindu RSS |
+| **Why required** | User mandate: "only real info must be shown all across — not fake." `mockAmenities` contained invented place names; `SEED_PROPERTIES` had only 7 entries for 7 localities; the Analytics infra pipeline was a hardcoded 4-item array with no source links. |
+| **Files modified** | `backend/main.py` (major — expanded seeds to 21 properties/10 localities/6 infra projects; added `fetch_real_amenities_overpass()`, `update_amenities_from_overpass()`, `fetch_and_store_infra_news()` background tasks; two-phase `lifespan()` startup); `backend/services/locality_service.py` (added `self.news`, `get_news()` method); `backend/api/endpoints/localities.py` (added `/news` route); `backend/api/endpoints/news.py` (NEW — `/api/v1/news` endpoint); `backend/api/router.py` (registered news router); `frontend/src/services/mockData.ts` (`mockAmenities` emptied; 3 localities added); `frontend/src/hooks/useApi.ts` (added `InfraProject`, `useInfraProjects`, `useLocalityNews`); `frontend/src/pages/Analytics/index.tsx` (infra section reads from `useInfraProjects()`, not hardcoded); `frontend/src/pages/Locality/index.tsx` (fake amenity fallback fully removed; proper loading/empty states) |
+| **Blast radius** | Medium — backend startup logic changed; new MongoDB collection `locality_news`; new `/api/v1/news` endpoint; amenity display now fully API-dependent with graceful static fallback |
+| **Rollback** | `git checkout HEAD -- backend/main.py backend/services/locality_service.py backend/api/endpoints/localities.py backend/api/router.py frontend/src/services/mockData.ts frontend/src/hooks/useApi.ts frontend/src/pages/Analytics/index.tsx frontend/src/pages/Locality/index.tsx && git rm backend/api/endpoints/news.py` |
+| **Verification** | Python AST parse returned "syntax OK" (21 properties, 10 localities, 6 infra projects confirmed). `npx tsc --noEmit` — zero TypeScript errors. Overpass deduplication via `(name.lower(), category)`. News deduplication via `uuid.uuid5`. Both background tasks fire non-blocking via `asyncio.create_task()`. |
+| **Side effects** | Overpass and RSS failures degrade gracefully — static seeds remain as fallback. Locality page shows "Loading amenities from OpenStreetMap…" on first load until background task completes. |
+| **Deployment impact** | Requires outbound HTTP access from backend to `overpass-api.de` and `thehindu.com`. First-time startup seeds data within ~10 seconds; real Overpass data loads within 30–60 seconds in background. |

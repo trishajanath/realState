@@ -16,6 +16,27 @@ async function apiFetch<T>(path: string): Promise<T> {
   return res.json();
 }
 
+// ── Locality Dashboard (home page aggregate) ─────────────────────────────────
+
+export interface LocalityDashboardEntry {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+  metrics: LocalityMetrics | null;
+  scores: LocalityScores | null;
+}
+
+export function useLocalityDashboard() {
+  return useQuery<LocalityDashboardEntry[]>({
+    queryKey: ['locality-dashboard'],
+    queryFn: () => apiFetch<LocalityDashboardEntry[]>('/localities/dashboard'),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // ── Localities ────────────────────────────────────────────────────────────────
 
 export function useLocalities() {
@@ -143,5 +164,49 @@ export function useAmenities(localityId?: string, category?: string) {
       const qs = params.toString();
       return apiFetch<Amenity[]>(`/amenities${qs ? '?' + qs : ''}`);
     },
+  });
+}
+
+// ── Infrastructure Projects & News ────────────────────────────────────────────
+
+export interface InfraProject {
+  id: string;
+  title: string;
+  phase: string;
+  target_date: string;
+  status: string;
+  impact: string;
+  corridors: string[];
+  category: string;
+  source_url?: string;
+  type: string;
+  // news-type fields
+  description?: string;
+  link?: string;
+  published_at?: string;
+  source?: string;
+  affected_localities?: string[];
+}
+
+export function useInfraProjects(locality?: string) {
+  return useQuery<InfraProject[]>({
+    queryKey: ['news', 'infrastructure', locality],
+    queryFn: () => {
+      const params = new URLSearchParams({ category: 'infrastructure' });
+      if (locality) params.set('locality', locality);
+      return apiFetch<InfraProject[]>(`/news?${params.toString()}`);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useLocalityNews(localityId: string, category?: string) {
+  return useQuery<InfraProject[]>({
+    queryKey: ['locality-news', localityId, category],
+    queryFn: () => {
+      const params = category ? `?category=${encodeURIComponent(category)}` : '';
+      return apiFetch<InfraProject[]>(`/localities/${localityId}/news${params}`);
+    },
+    enabled: !!localityId,
   });
 }

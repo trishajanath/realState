@@ -211,3 +211,68 @@ Format: Confidence 1 (no confidence) → 10 (fully certain).
 | **Safe to merge automatically?** | Yes (after verifying remote MongoDB instance connection and scraper logs) |
 | **Assumptions made** | The simulated listings schema maps seamlessly to existing search logic, and index changes are non-breaking. |
 | **Uncertainty remaining** | Long-term rate limits on housing providers or external network blocks during real scraper execution. |
+
+---
+
+## [Change #17] — 2026-06-16: Fix Map Loading — Property Shape Mismatch, Script Race, Backend Seeding
+
+| Field | Value |
+|---|---|
+| **Confidence before implementation** | 9/10 |
+| **Confidence after implementation** | 9/10 |
+| **Human review required?** | No |
+| **Safe to merge automatically?** | Yes |
+| **Assumptions made** | MongoDB Atlas is reachable on startup; upserts are safe to run on every restart. `useProperties({ limit: 100 })` is sufficient for current dataset; pagination would be needed beyond ~100 listings. |
+| **Uncertainty remaining** | If the Google Maps API key is invalid, the map falls back to SVG canvas — this is expected behavior. |
+
+---
+
+## [Change #18] — 2026-06-16: Map UX — Show All Modal + Coimbatore Centering
+
+| Field | Value |
+|---|---|
+| **Confidence before implementation** | 10/10 |
+| **Confidence after implementation** | 10/10 |
+| **Human review required?** | No |
+| **Safe to merge automatically?** | Yes |
+| **Assumptions made** | (11.04, 76.99) zoom 11 is a good default for Coimbatore city; modal 860px wide fits on 1024px+ screens |
+| **Uncertainty remaining** | None |
+
+---
+
+## [Change #19] — 2026-06-16: Map Sidebar Light Theme Conversion
+
+| Field | Value |
+|---|---|
+| **Confidence before implementation** | 10/10 |
+| **Confidence after implementation** | 10/10 |
+| **Human review required?** | No |
+| **Safe to merge automatically?** | Yes |
+| **Assumptions made** | XVERTA light theme palette (`#FFFFFF` bg, `#000000` text, `#F9FAFB` inputs, `#E5E7EB` borders, `#6B7280`/`#9CA3AF` muted text) is the correct target for the sidebar |
+| **Uncertainty remaining** | None |
+
+---
+
+## [Change #20] — 2026-06-16: UI Data Density Overhaul — Home, Locality, Analytics Pages
+
+| Field | Value |
+|---|---|
+| **Confidence before implementation** | 8/10 |
+| **Confidence after implementation** | 9/10 |
+| **Human review required?** | No |
+| **Safe to merge automatically?** | Yes |
+| **Assumptions made** | `LocalityMetrics` fields (density per km², transit distances, proximity scores) are populated by the backend seed; mock fallback (`mockMetrics[localityId]`) is used when API data is unavailable. Score bars use fixed thresholds (green ≥80, blue ≥65, amber <65). Analytics Rankings adds `lifestyle_score` and `rental_yield_estimate` from mockScores/mockMetrics since no dedicated API endpoint exists for these at the aggregate level. |
+| **Uncertainty remaining** | If the backend does not return all `LocalityMetrics` fields (e.g. `schools_per_sq_km`, `nearest_railway_station`), the UI silently falls back to mock values — real data quality not verified end-to-end. |
+
+---
+
+## [Change #21] — 2026-06-16: Real Data Refactor — Overpass Amenities, RSS News, Expanded Projects
+
+| Field | Value |
+|---|---|
+| **Confidence before implementation** | 8/10 |
+| **Confidence after implementation** | 9/10 |
+| **Human review required?** | **Yes** — new external API dependencies (`overpass-api.de`, The Hindu RSS) and a new MongoDB collection; deployment environment must have outbound HTTP access |
+| **Safe to merge automatically?** | **No** — verify outbound connectivity to Overpass and The Hindu RSS from the deployment host before merging; test that `asyncio.Semaphore(3)` rate-limiting is sufficient under real Overpass API load |
+| **Assumptions made** | (1) Overpass API is reachable from the backend host at startup — if not, the 15-entry static `SEED_AMENITIES` serve as fallback and the app is functional. (2) The Hindu Coimbatore RSS URL (`https://www.thehindu.com/news/cities/Coimbatore/feeder/default.rss`) remains stable and returns infrastructure-relevant items. (3) `uuid.uuid5(NAMESPACE_URL, link or title)` provides sufficient deduplication for RSS items. (4) Real property developer names (Casagrand, KG Foundation, etc.) and project details are accurate as of research at implementation time. |
+| **Uncertainty remaining** | Overpass POI quality depends on OSM contributor coverage of each Coimbatore locality — low-coverage areas may return fewer than expected amenities. The Hindu RSS filtering (keyword-based) may miss some infra news or include off-topic articles. Real Overpass latency per locality is unknown; the `asyncio.Semaphore(3)` batch size may need tuning. |

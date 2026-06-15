@@ -160,3 +160,65 @@ Property search text query execution in `repositories/mongo_search.py` returned 
 
 ### 8. Is this a repeat pattern?
 * **No.** This was a schema mapping oversight.
+
+---
+
+## Incident 7: Fake Data Displayed to Users Across All Pages (Change #22)
+
+### 1. What happened?
+The application was displaying fabricated data across multiple surfaces: `mockAmenities` in `frontend/src/services/mockData.ts` contained invented place names (e.g. "Central Academy", "City Hospital") with no real-world counterparts. The Analytics infra pipeline was a hardcoded 4-item array with no source links. `SEED_PROPERTIES` had 7 entries covering 7 localities — all plausible-sounding but unverified. Users had no mechanism to know any data was fake.
+
+### Category
+**Governance Problem** — no policy existed to distinguish "real seed data" from "invented placeholder data"; the mock data system was designed for development convenience but was never gated from production rendering.
+
+### 2. Could approval have prevented it?
+* **Yes.** A product review policy requiring that any data displayed in a non-demo build trace to a real source (OSM node ID, MLS listing, official project announcement) would have caught this before launch.
+
+### 3. Could policy enforcement have prevented it?
+* **Yes.** A policy stating "mock fallback data must be behind a `DEMO_MODE` env flag and must never reach a production build" would have forced the separation. The mock data system was designed as a dev convenience but was never gated.
+
+### 4. Could blast-radius analysis have prevented it?
+* **Partially.** A blast-radius review of the mock-data system (Shortcut #1) noted the risk but did not escalate it to a blocking issue. The recommended "DEMO MODE" banner was never implemented.
+
+### 5. Could runtime verification have prevented it?
+* **Yes.** An automated test asserting that no amenity `name` matches a known-fake string pattern (or that all displayed amenity names appear in an OSM lookup) would have flagged the problem.
+
+### 6. Could a second agent have detected it?
+* **Yes.** A QA agent checking displayed amenity names against OSM data for the same bounding box would have immediately found zero overlap.
+
+### 7. Could automated governance have helped?
+* **Yes.** A CI check comparing displayed data against a reference dataset (e.g. OSM locality dump) would catch invented place names on every PR.
+
+### 8. Is this a repeat pattern?
+* **Yes** — same class as Shortcut #1 (mock data as primary data source) which was logged but never resolved before production features were built on top of it. The shortcut accumulated technical debt that required a full refactor (Change #22) to address.
+
+---
+
+## Incident 8: Data-Dense UI Renders Mock Data Indistinguishably From Live Data (Changes #20–#21)
+
+### 1. What happened?
+The UI Data Density Overhaul (Change #20) surfaced 20+ hidden `LocalityMetrics` fields across Locality, Home, and Analytics pages. The Locality page uses `const m = metricsData || mockMetrics[localityId]` as a silent fallback — if the API doesn't return density metrics, transit distances, or proximity scores, the UI renders hardcoded mock values with no visual indicator. The Analytics Rankings tab sources `lifestyle_score` and `rental_yield_estimate` from `mockScores`/`mockMetrics` unconditionally because no aggregate endpoint exists.
+
+### Category
+**Observability Problem** — the UI presents more data than the backend currently supplies, with no user-visible distinction between live and mock values.
+
+### 2. Could approval have prevented it?
+* **Partially.** A reviewer reading the code would notice the `||` fallback but might accept it as a reasonable dev shortcut. A policy requiring "no mock data rendered without a visible label" would have blocked it.
+
+### 3. Could policy enforcement have prevented it?
+* **Yes.** A policy: "all data displayed to users must be sourced from the live API or clearly labelled as estimated/demo data" would enforce a visible badge when mock fallback is active.
+
+### 4. Could blast-radius analysis have prevented it?
+* **Partially.** Blast-radius review would note the UI is more data-dense than the backend can supply — a useful prompt to require a demo-data indicator.
+
+### 5. Could runtime verification have prevented it?
+* **Yes.** An integration test that disconnects the metrics API and checks whether the Locality page renders a "Demo data" label (rather than silently using mock values) would catch this.
+
+### 6. Could a second agent have detected it?
+* **Yes.** A QA agent comparing backend metrics API response fields against what the UI renders would notice the discrepancy between real and displayed fields.
+
+### 7. Could automated governance have helped?
+* **Yes.** A lint rule flagging any `|| mock` pattern in production component files (outside `*.test.*`) would surface this on every PR.
+
+### 8. Is this a repeat pattern?
+* **Yes** — same class as Shortcut #1, Incident 7, and Shortcuts #9/#10 logged this session. Mock fallbacks without user-visible indicators are a recurring pattern in this codebase.

@@ -6,11 +6,13 @@ from core.logging import logger
 
 class LocalityService:
     def __init__(self, mongo_db: AsyncIOMotorDatabase):
+        self._db = mongo_db
         self.localities = mongo_db["localities"]
         self.metrics = mongo_db["locality_metrics"]
         self.scores = mongo_db["locality_scores"]
         self.amenities = mongo_db["amenities"]
         self.recommendations = mongo_db["locality_recommendations"]
+        self.news = mongo_db["locality_news"]
 
     async def list_localities(self, skip: int = 0, limit: int = 50) -> List[dict]:
         cursor = self.localities.find({}, {"_id": 0}).skip(skip).limit(limit)
@@ -51,3 +53,34 @@ class LocalityService:
         for doc in docs:
             results.extend(doc.get("items", []))
         return results
+
+    async def get_dashboard_data(self) -> List[dict]:
+        """Return all localities with embedded metrics and scores for the home page."""
+        localities = await self.list_localities()
+        result = []
+        for loc in localities:
+            metrics = await self.get_metrics(loc["id"])
+            scores = await self.get_scores(loc["id"])
+            result.append({**loc, "metrics": metrics, "scores": scores})
+        return result
+
+    async def get_news(self, locality_id: Optional[str] = None, category: Optional[str] = None) -> List[dict]:
+        """Return infrastructure projects and news items, optionally filtered by locality name."""
+        query: Dict[str, Any] = {}
+        if category:
+            query["category"] = category
+
+        cursor = self.news.find(query, {"_id": 0}).sort("published_at", -1)
+        docs = await cursor.to_list(length=200)
+
+        if locality_id:
+            # Find the locality name so we can filter by corridor mentions
+            loc = await self.get_locality(locality_id)
+            if loc:
+                name = loc.get("name", "")
+                docs = [
+                    d for d in docs
+                    if name in d.get("affected_localities", []) or name in d.get("corridors", [])
+                ]
+
+        return docs

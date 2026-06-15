@@ -183,3 +183,64 @@ Scraper providers for MagicBricks, 99Acres, and Housing.com simulate web page re
 **Recommended fix**:
 1. Implement a rotating proxy provider service.
 2. Build an integration test that checks real DOM selectors on live target pages and alerts developers when selectors break.
+
+---
+
+## Shortcut #9 — Static Amenity Seeds as Overpass Fallback + Estimated Distances
+
+**Change reference**: Change #22
+
+**What happened**:
+Two shortcuts remain in the real-data refactor:
+
+1. **15-entry `SEED_AMENITIES` static fallback**: When the Overpass API is unreachable on startup, the database retains 15 hardcoded amenity entries (`am1`–`am15`) covering Saravanampatti, Peelamedu, and RS Puram. These are more accurate than the previous mock entries but are still not real scraped data. Other 7 localities get no amenity coverage until Overpass succeeds.
+
+2. **Distance estimation formula in `getAmenitiesList()`**: The Locality page shows a `distance` value computed as `((idx + 1) * 0.35).toFixed(1) km` — i.e., 0.35 km, 0.70 km, 1.05 km, ... for each result. This is positional index math, not a real geodistance calculated from the property or locality coordinates.
+
+**Why it happened**:
+- Static fallback: Overpass API is a free service with no SLA; without a fallback, amenity sections would be empty on restricted networks.
+- Distance estimation: The Overpass API returns node lat/lon but computing real geodistance requires the locality center coordinates at render time — this wiring was deferred to keep the change scope focused.
+
+**Risk level**: Low
+- Static seeds are reasonable placeholders and clearly only affect the fallback path (labelled with IDs `am1`–`am15`)
+- Fake distances are cosmetic only; no business logic depends on them; users see plausible-looking values
+
+**Recommended fix**:
+1. For distances: use the Haversine formula with the locality's `latitude`/`longitude` (available in `useLocality()`) and each amenity's `lat`/`lon` OSM coordinates. Store `lat`/`lon` on every amenity record returned by `fetch_real_amenities_overpass()`.
+2. For the fallback: document the static seeds clearly in the seed data comments and consider expanding coverage to all 10 localities in a follow-up pass.
+
+---
+
+## Shortcut #10 — LocalityMetrics Mock Fallback in Locality Page
+
+**Change reference**: Change #20 (UI Data Density Overhaul)
+
+**What happened**:
+The Locality page uses `const m = metricsData || mockMetrics[localityId]` and `const s = scoresData || mockScores[localityId]` — if the API does not return a full `LocalityMetrics` object, all density chips, transit distances, connectivity scores, and score bars silently render from hardcoded mock data without any indication to the user.
+
+**Why it happened**: The backend may not yet populate every `LocalityMetrics` field (density per km², transit distances, highway score, IT park / metro / industrial corridor proximity) from real data. The mock fallback was required to make the new data-dense UI render meaningfully during development.
+
+**Risk level**: Medium
+- Users cannot distinguish live metrics from mock metrics; data density reads as factual
+- If `metricsData` is partially populated (some fields present, others `undefined`), the `||` operator picks the real object and missing fields render as `—` or `NaN`
+
+**Recommended fix**:
+1. Add a subtle "Demo data" indicator when mock fallback is active (e.g., check `!metricsData` and render a small badge)
+2. Populate all `LocalityMetrics` fields in the backend seed so the API always returns complete objects
+
+---
+
+## Shortcut #11 — Analytics Rankings Uses Mock Data for Lifestyle and Yield% Columns
+
+**Change reference**: Change #20 (UI Data Density Overhaul)
+
+**What happened**:
+The Analytics Rankings tab displays `lifestyle_score` and `rental_yield_estimate` per locality sourced from `mockScores[id]?.lifestyle_score` and `mockMetrics[id]?.rental_yield_estimate`. No aggregate endpoint returns all locality scores in a single call.
+
+**Why it happened**: `/localities/:id/scores` is per-locality only. Batching 7 parallel queries was deferred to keep the change scope focused.
+
+**Risk level**: Low now → Medium as real data diverges from mock values over time
+
+**Recommended fix**:
+1. Add `GET /api/v1/localities/scores/all` returning scores for all localities in one response
+2. Or batch-fetch with `Promise.all` in the Analytics page and merge into the rankings table

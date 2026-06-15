@@ -101,3 +101,17 @@ Any change to auth, database schema, or secrets **requires human sign-off in [ag
 | **Downtime potential** | None |
 | **User impact** | None — search queries perform fast text matches against locality names |
 | **Pre-deploy checklist** | ☐ Verify that the database user has permissions to drop and create indexes in MongoDB · ☐ Run the database startup scripts to ensure correct index creation |
+
+---
+
+## Risk #7 — Real Data Refactor: External API Dependencies + New DB Collection (Change #22)
+
+| Field | Detail |
+|---|---|
+| **Change** | Backend now calls `overpass-api.de` (OpenStreetMap) and `thehindu.com` RSS feed at startup via async background tasks; new `locality_news` MongoDB collection created |
+| **Risk level** | MEDIUM |
+| **Blast radius** | If Overpass is unreachable on first deploy: amenity coverage degrades to 15 static seed entries across 3 localities; 7 localities show no amenities. If The Hindu RSS is blocked: only 6 seeded infrastructure projects appear, no live news items. Both failures are silent — the app starts normally and serves reduced data. |
+| **Rollback complexity** | Low — revert `backend/main.py` to remove `fetch_real_amenities_overpass()` and `fetch_and_store_infra_news()` tasks; drop `locality_news` collection |
+| **Downtime potential** | None — background tasks run after seed data is written; app is fully responsive during Overpass/RSS fetch |
+| **User impact** | On Locality pages: amenity sections may show "Loading amenities from OpenStreetMap..." or static fallback entries. On Analytics: infra pipeline shows 6 seeded items while RSS fetch runs in background. After 30–60 seconds on a clean deploy, real data replaces fallback data. |
+| **Pre-deploy checklist** | ☐ Confirm outbound HTTPS to `overpass-api.de` is allowed from the deployment host/VPC · ☐ Confirm outbound HTTPS to `thehindu.com` is allowed · ☐ Verify MongoDB user has write permissions to create new collection `locality_news` · ☐ Confirm `asyncio.Semaphore(3)` is sufficient under Overpass free-tier rate limits (test with 10 localities) · ☐ Monitor startup logs for `[overpass]` and `[news]` prefixed log lines on first deploy |

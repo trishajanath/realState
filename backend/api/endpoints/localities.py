@@ -19,6 +19,15 @@ async def list_localities(
     return await service.list_localities(skip=skip, limit=limit)
 
 
+@router.get("/dashboard")
+async def get_locality_dashboard(
+    mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
+):
+    """Return all localities with embedded metrics and scores for the home page."""
+    service = LocalityService(mongo_db)
+    return await service.get_dashboard_data()
+
+
 @router.get("/{locality_id}", response_model=LocalityResponse)
 async def get_locality(
     locality_id: str,
@@ -73,3 +82,13 @@ async def get_locality_amenities(
 ):
     service = LocalityService(mongo_db)
     return await service.get_amenities(locality_id, category=category)
+
+
+@router.get("/{locality_id}/news")
+async def get_locality_news(
+    locality_id: str,
+    category: Optional[str] = Query(None, description="Filter by category: infrastructure, real_estate"),
+    mongo_db: AsyncIOMotorDatabase = Depends(get_mongo_db)
+):
+    service = LocalityService(mongo_db)
+    return await service.get_news(locality_id=locality_id, category=category)
